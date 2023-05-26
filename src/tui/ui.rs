@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{palette::tailwind, Stylize},
-    text::{Line, Text},
+    text::Line,
     Frame,
 };
 
@@ -23,6 +23,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
             "Select the setup you want".into(),
             "<UP> or <DOWN>".blue().bold(),
         ]),
+        Line::from(vec!["Confirm".into(), "<ENTER>".blue().bold()]),
         Line::from(vec!["Increment Menu Size".into(), "<Right>".blue().bold()]),
         "Quit <Q>".into(),
     ])
