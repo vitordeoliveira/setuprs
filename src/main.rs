@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    env, fs,
+    io::{Error, Write},
+    path::{Path, PathBuf},
+};
 
 use clap::{Parser, Subcommand};
 use serde_derive::Deserialize;
@@ -6,9 +10,6 @@ use serde_derive::Deserialize;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
-    /// Optional name to operate on
-    names: Option<String>,
-
     /// Sets a custom config file
     #[arg(short, long, value_name = "TOML FILE")]
     config: Option<PathBuf>,
@@ -27,11 +28,9 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// does testing things
-    Test {
-        /// lists test values
+    Snapshot {
         #[arg(short, long)]
-        list: bool,
+        dir: String,
     },
 }
 
@@ -39,18 +38,59 @@ enum Commands {
 struct Config {
     config_file_path: String,
     debug_mode: String,
+    snapshots_path: String,
+}
+
+fn search_file_create_folder_if_not_found(
+    folder_path_and_file: &str,
+) -> Result<PathBuf, std::io::Error> {
+    let file_path = Path::new(folder_path_and_file);
+
+    // Extract the parent directory path
+    let parent_dir = file_path
+        .parent()
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid path"))?;
+
+    // Create the parent directory if it doesn't exist
+    if !parent_dir.exists() {
+        fs::create_dir_all(parent_dir)?;
+    }
+
+    // Create the file if it doesn't exist
+    if !file_path.exists() {
+        let mut file = fs::File::create(file_path)?;
+        file.write_all(b"config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'")?;
+    }
+
+    // Return the full path of the file
+    Ok(file_path.to_path_buf())
 }
 
 fn main() {
     let cli = Cli::parse();
 
-    // You can check the value provided by positional arguments, or option arguments
-    if let Some(name) = cli.names.as_deref() {
-        println!("Value for name: {name}");
+    let pwd = env::var("PWD").unwrap();
+
+    let config_path: PathBuf = match cli.config {
+        Some(v) => v,
+        _ => PathBuf::from(format!("{pwd}/config/.setuprs.toml")),
+    };
+
+    match search_file_create_folder_if_not_found(
+        &config_path.clone().into_os_string().into_string().unwrap(),
+    ) {
+        Ok(path) => {
+            println!("File '{:?}'", path);
+        }
+        Err(err) => {
+            eprintln!("Error: {}", err);
+        }
     }
 
-    if let Some(config_path) = cli.config.as_deref() {
-        println!("Value for config: {}", config_path.display());
+    if cli.current_config {
+        let contents = fs::read_to_string(&config_path).unwrap();
+        let data: Config = toml::from_str(&contents).unwrap();
+        println!("{data:?}");
     }
 
     // You can see how many times a particular flag or argument occurred
@@ -65,22 +105,12 @@ fn main() {
     // You can check for the existence of subcommands, and if found use their
     // matches just as you would the top level cmd
     match &cli.command {
-        Some(Commands::Test { list }) => {
-            if *list {
-                println!("Printing testing lists...");
-            } else {
-                println!("Not printing testing lists...");
-            }
+        Some(Commands::Snapshot { dir }) => {
+            println!("Dir: {dir}");
         }
+
         None => {}
     }
 
     // Continued program logic goes here...
-    let filename = "config.toml";
-
-    let contents = fs::read_to_string(filename).unwrap();
-
-    let data: Config = toml::from_str(&contents).unwrap();
-
-    println!("{data:?}");
 }
