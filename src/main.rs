@@ -1,12 +1,13 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use clap::{Parser, Subcommand};
+use serde_derive::Deserialize;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Cli {
     /// Optional name to operate on
-    name: Option<String>,
+    names: Option<String>,
 
     /// Sets a custom config file
     #[arg(short, long, value_name = "TOML FILE")]
@@ -34,11 +35,17 @@ enum Commands {
     },
 }
 
+#[derive(Deserialize, Debug)]
+struct Config {
+    config_file_path: String,
+    debug_mode: String,
+}
+
 fn main() {
     let cli = Cli::parse();
 
     // You can check the value provided by positional arguments, or option arguments
-    if let Some(name) = cli.name.as_deref() {
+    if let Some(name) = cli.names.as_deref() {
         println!("Value for name: {name}");
     }
 
@@ -69,4 +76,11 @@ fn main() {
     }
 
     // Continued program logic goes here...
+    let filename = "config.toml";
+
+    let contents = fs::read_to_string(filename).unwrap();
+
+    let data: Config = toml::from_str(&contents).unwrap();
+
+    println!("{data:?}");
 }
