@@ -1,11 +1,14 @@
 use std::{
-    env, fs,
-    io::{Error, Write},
+    env,
+    fmt::Display,
+    fs,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 
 use clap::{Parser, Subcommand};
 use serde_derive::Deserialize;
+use uuid::Uuid;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -18,16 +21,13 @@ struct Cli {
     #[arg(long)]
     current_config: bool,
 
-    /// Turn debugging information on
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    debug: u8,
-
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Create snapshot
     Snapshot {
         #[arg(short, long)]
         dir: String,
@@ -39,6 +39,16 @@ struct Config {
     config_file_path: String,
     debug_mode: String,
     snapshots_path: String,
+}
+
+impl Display for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "\n----------------------\nCONFIG\n----------------------\nConfig file path: \"{}\"\nSnapshots path: \"{}\"\nDebug mode: \"{}\"\n----------------------",
+            self.config_file_path, self.snapshots_path, self.debug_mode
+        )
+    }
 }
 
 fn search_file_create_folder_if_not_found(
@@ -66,6 +76,33 @@ fn search_file_create_folder_if_not_found(
     Ok(file_path.to_path_buf())
 }
 
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+    let new_dst = PathBuf::from(format!(
+        "{}/{}",
+        dst.as_ref().display(), // Use display() method to get path as a string
+        Uuid::new_v4()
+    ));
+
+    fs::create_dir_all(&new_dst)?;
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+
+        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
+            println!("{:?}", entry.file_name());
+            continue;
+        }
+
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), &new_dst.join(entry.file_name()))?;
+        } else {
+            fs::copy(entry.path(), &new_dst.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -90,23 +127,14 @@ fn main() {
     if cli.current_config {
         let contents = fs::read_to_string(&config_path).unwrap();
         let data: Config = toml::from_str(&contents).unwrap();
-        println!("{data:?}");
+        println!("{data}");
     }
 
-    // You can see how many times a particular flag or argument occurred
-    // Note, only flags can have multiple occurrences
-    match cli.debug {
-        0 => println!("Debug mode is off"),
-        1 => println!("Debug mode is kind of on"),
-        2 => println!("Debug mode is on"),
-        _ => println!("Don't be crazy"),
-    }
-
-    // You can check for the existence of subcommands, and if found use their
-    // matches just as you would the top level cmd
     match &cli.command {
         Some(Commands::Snapshot { dir }) => {
-            println!("Dir: {dir}");
+            let contents = fs::read_to_string(&config_path).unwrap();
+            let data: Config = toml::from_str(&contents).unwrap();
+            copy_dir_all(dir, data.snapshots_path).unwrap();
         }
 
         None => {}
