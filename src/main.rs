@@ -76,11 +76,46 @@ fn search_file_create_folder_if_not_found(
     Ok(file_path.to_path_buf())
 }
 
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+#[allow(dead_code)]
+struct Noisy {
+    folder: String,
+    file: String,
+}
+
+impl Noisy {
+    #[allow(dead_code)]
+    fn new() -> Self {
+        let (folder, file) = (
+            Uuid::new_v4().to_string(),
+            format!("{}.toml", Uuid::new_v4()),
+        );
+        search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str()).unwrap();
+        Self { folder, file }
+    }
+}
+
+impl Drop for Noisy {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir_all(format!("./{}", self.folder));
+    }
+}
+
+#[test]
+fn should_create_folder_and_file() {
+    let Noisy { folder, file } = &Noisy::new();
+
+    let file: String = fs::read_to_string(format!("./{folder}/{file}")).unwrap();
+    assert_eq!(
+        file,
+        "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"
+    );
+}
+
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
     let new_dst = PathBuf::from(format!(
         "{}/{}",
         dst.as_ref().display(), // Use display() method to get path as a string
-        Uuid::new_v4()
+        id
     ));
 
     fs::create_dir_all(&new_dst)?;
@@ -95,12 +130,30 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> 
         }
 
         if ty.is_dir() {
-            copy_dir_all(entry.path(), &new_dst.join(entry.file_name()))?;
+            copy_dir_all(
+                entry.path(),
+                &new_dst.join(entry.file_name()),
+                &Uuid::new_v4().to_string(),
+            )?;
         } else {
             fs::copy(entry.path(), &new_dst.join(entry.file_name()))?;
         }
     }
     Ok(())
+}
+
+#[test]
+fn should_copy_folder_recurcivilly() {
+    let Noisy { folder, file } = &Noisy::new();
+    copy_dir_all(folder, "./test_folder_copy", "test_id").unwrap();
+
+    let file: String = fs::read_to_string(format!("./test_folder_copy/test_id/{file}")).unwrap();
+    assert_eq!(
+        file,
+        "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"
+    );
+
+    let _ = fs::remove_dir_all("./test_folder_copy");
 }
 
 fn main() {
@@ -134,7 +187,7 @@ fn main() {
         Some(Commands::Snapshot { dir }) => {
             let contents = fs::read_to_string(&config_path).unwrap();
             let data: Config = toml::from_str(&contents).unwrap();
-            copy_dir_all(dir, data.snapshots_path).unwrap();
+            copy_dir_all(dir, data.snapshots_path, &Uuid::new_v4().to_string()).unwrap();
         }
 
         None => {}
