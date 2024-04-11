@@ -87,7 +87,13 @@ impl FromStr for Config {
     }
 }
 
+fn search_file_create_folder_if_not_found(
     folder_path_and_file: &str,
+    Config {
+        snapshots_path,
+        debug_mode,
+        config_file_path,
+    }: &Config,
 ) -> Result<PathBuf, std::io::Error> {
     let file_path = Path::new(folder_path_and_file);
 
@@ -96,27 +102,25 @@ impl FromStr for Config {
         .parent()
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid path"))?;
 
-    // Create the parent directory if it doesn't exist
     if !parent_dir.exists() {
         fs::create_dir_all(parent_dir)?;
     }
 
-    // Create the file if it doesn't exist
     if !file_path.exists() {
         let mut file = fs::File::create(file_path)?;
-        file.write_all(b"config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'")?;
+        file.write_all(
+            format!(
+            "config_file_path = '{config_file_path}'\ndebug_mode = '{debug_mode}'\nsnapshots_path = '{snapshots_path}'"
+        )
+            .as_bytes(),
+        )?;
     }
 
-    // Return the full path of the file
     Ok(file_path.to_path_buf())
 }
 
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
-    let new_dst = PathBuf::from(format!(
-        "{}/{}",
-        dst.as_ref().display(), // Use display() method to get path as a string
-        id
-    ));
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
+    let new_dst = PathBuf::from(format!("{}/{}", dst.as_ref().display(), id));
 
     fs::create_dir_all(&new_dst)?;
 
@@ -155,7 +159,15 @@ impl Noisy {
             Uuid::new_v4().to_string(),
             format!("{}.toml", Uuid::new_v4()),
         );
-        search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str()).unwrap();
+
+        let config = Config {
+            config_file_path: ".".to_string(),
+            debug_mode: "error".to_string(),
+            snapshots_path: ".".to_string(),
+        };
+
+        search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str(), &config)
+            .unwrap();
         Self { folder, file }
     }
 }
