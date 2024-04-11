@@ -1,4 +1,0 @@
-config_file_path = '.'
-debug_mode = 'error'
-snapshots_path = './snapshots'
-
