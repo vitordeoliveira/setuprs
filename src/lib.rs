@@ -1,8 +1,10 @@
 use std::{
+    env,
     fmt::Display,
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 use serde_derive::Deserialize;
@@ -10,13 +12,24 @@ use uuid::Uuid;
 
 pub mod cli;
 
-#[derive(Deserialize, Debug)]
-pub struct Config {
+#[derive(PartialEq, Deserialize, Debug)]
+struct Config {
     pub config_file_path: String,
     pub debug_mode: String,
     pub snapshots_path: String,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        let home = env::var("HOME").unwrap();
+
+        Self {
+            config_file_path: format!("{home}/.config/setuprs/setuprs.toml"),
+            debug_mode: "error".to_string(),
+            snapshots_path: format!("{home}/.config/setuprs/"),
+        }
+    }
+}
 impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
