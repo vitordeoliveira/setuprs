@@ -1,10 +1,31 @@
 use std::{
+    fmt::Display,
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
 };
 
+use serde_derive::Deserialize;
 use uuid::Uuid;
+
+pub mod cli;
+
+#[derive(Deserialize, Debug)]
+pub struct Config {
+    pub config_file_path: String,
+    pub debug_mode: String,
+    pub snapshots_path: String,
+}
+
+impl Display for Config {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "\n----------------------\nCONFIG\n----------------------\nConfig file path: \"{}\"\nSnapshots path: \"{}\"\nDebug mode: \"{}\"\n----------------------",
+            self.config_file_path, self.snapshots_path, self.debug_mode
+        )
+    }
+}
 
 pub fn search_file_create_folder_if_not_found(
     folder_path_and_file: &str,
@@ -29,6 +50,37 @@ pub fn search_file_create_folder_if_not_found(
 
     // Return the full path of the file
     Ok(file_path.to_path_buf())
+}
+
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
+    let new_dst = PathBuf::from(format!(
+        "{}/{}",
+        dst.as_ref().display(), // Use display() method to get path as a string
+        id
+    ));
+
+    fs::create_dir_all(&new_dst)?;
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+
+        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
+            println!("{:?}", entry.file_name());
+            continue;
+        }
+
+        if ty.is_dir() {
+            copy_dir_all(
+                entry.path(),
+                &new_dst.join(entry.file_name()),
+                &Uuid::new_v4().to_string(),
+            )?;
+        } else {
+            fs::copy(entry.path(), &new_dst.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }
 
 #[allow(dead_code)]
@@ -64,37 +116,6 @@ fn should_create_folder_and_file() {
         file,
         "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"
     );
-}
-
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
-    let new_dst = PathBuf::from(format!(
-        "{}/{}",
-        dst.as_ref().display(), // Use display() method to get path as a string
-        id
-    ));
-
-    fs::create_dir_all(&new_dst)?;
-
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let ty = entry.file_type()?;
-
-        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
-            println!("{:?}", entry.file_name());
-            continue;
-        }
-
-        if ty.is_dir() {
-            copy_dir_all(
-                entry.path(),
-                &new_dst.join(entry.file_name()),
-                &Uuid::new_v4().to_string(),
-            )?;
-        } else {
-            fs::copy(entry.path(), &new_dst.join(entry.file_name()))?;
-        }
-    }
-    Ok(())
 }
 
 #[test]
