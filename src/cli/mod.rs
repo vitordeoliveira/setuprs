@@ -1,6 +1,5 @@
 use std::{env, fs, path::PathBuf};
 
-use assert_cmd::{assert::OutputAssertExt, Command};
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
 
@@ -31,18 +30,24 @@ enum Commands {
 }
 
 impl Cli {
-    pub fn execute() -> Result<(), ()> {
+    pub fn execute() {
         let cli = Cli::parse();
 
-        let pwd = env::var("PWD").unwrap();
+        let home = env::var("HOME").unwrap();
+        let default_config = Config {
+            config_file_path: format!("{home}/.config/.setuprs.toml"),
+            debug_mode: "error".to_string(),
+            snapshots_path: ".".to_string(),
+        };
 
         let config_path: PathBuf = match &cli.config {
             Some(v) => v.clone(),
-            _ => PathBuf::from(format!("{pwd}/config/.setuprs.toml")),
+            _ => PathBuf::from(&default_config.config_file_path),
         };
 
         match search_file_create_folder_if_not_found(
             &config_path.clone().into_os_string().into_string().unwrap(),
+            &default_config,
         ) {
             Ok(path) => {
                 println!("File '{:?}'", path);
@@ -54,7 +59,7 @@ impl Cli {
 
         if cli.current_config {
             let contents = fs::read_to_string(&config_path).unwrap();
-            let data: Config = toml::from_str(&contents).unwrap();
+            let data = toml::from_str::<Config>(&contents).unwrap();
             println!("{data}");
         }
 
@@ -67,8 +72,6 @@ impl Cli {
 
             None => {}
         };
-
-        Ok(())
     }
 }
 
