@@ -41,7 +41,52 @@ impl Display for Config {
     }
 }
 
-pub fn search_file_create_folder_if_not_found(
+#[derive(Debug, PartialEq, Eq)]
+struct ParseConfigError;
+
+impl FromStr for Config {
+    type Err = ParseConfigError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut config_file_path = None;
+        let mut snapshot_path = None;
+        let mut debug_mode = None;
+
+        for line in s.lines() {
+            let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+
+            if parts.len() == 2 {
+                let (key, value) = (parts[0], parts[1]);
+
+                match key {
+                    "Config file path" => config_file_path = Some(value.to_string()),
+                    "Snapshots path" => snapshot_path = Some(value.to_string()),
+                    "Debug mode" => debug_mode = Some(value.to_string()),
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(Config {
+            config_file_path: config_file_path.unwrap(),
+            snapshots_path: snapshot_path.unwrap(),
+            debug_mode: debug_mode.unwrap(),
+        })
+
+        // if let (Some(config_file_path), Some(snapshots_path), Some(debug_mode)) =
+        //     (config_file_path, snapshot_path, debug_mode)
+        // {
+        //     Ok(Config {
+        //         config_file_path,
+        //         snapshots_path,
+        //         debug_mode,
+        //     })
+        // } else {
+        //     Err(ParseConfigError)
+        // }
+    }
+}
+
     folder_path_and_file: &str,
 ) -> Result<PathBuf, std::io::Error> {
     let file_path = Path::new(folder_path_and_file);
