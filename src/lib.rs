@@ -30,11 +30,12 @@ impl Default for Config {
         }
     }
 }
+
 impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "\n----------------------\nCONFIG\n----------------------\nConfig file path: \"{}\"\nSnapshots path: \"{}\"\nDebug mode: \"{}\"\n----------------------",
+            "\n----------------------\nCONFIG\n----------------------\nConfig file path: {}\nSnapshots path: {}\nDebug mode: {}\n----------------------",
             self.config_file_path, self.snapshots_path, self.debug_mode
         )
     }
