@@ -1,4 +1,4 @@
-use std::{env, fs, path::PathBuf};
+use std::{fs, path::PathBuf};
 
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
@@ -33,12 +33,7 @@ impl Cli {
     pub fn execute() {
         let cli = Cli::parse();
 
-        let home = env::var("HOME").unwrap();
-        let default_config = Config {
-            config_file_path: format!("{home}/.config/.setuprs.toml"),
-            debug_mode: "error".to_string(),
-            snapshots_path: ".".to_string(),
-        };
+        let default_config = Config::default();
 
         let config_path: PathBuf = match &cli.config {
             Some(v) => v.clone(),
@@ -75,38 +70,91 @@ impl Cli {
     }
 }
 
-#[allow(dead_code)]
-struct Noisy {
-    folder: String,
-    file: String,
-}
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
 
-impl Noisy {
+    use assert_cmd::Command;
+
+    use super::*;
+
     #[allow(dead_code)]
-    fn new() -> Self {
-        let (folder, file) = (
-            Uuid::new_v4().to_string(),
-            format!("{}.toml", Uuid::new_v4()),
-        );
-        search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str()).unwrap();
-        Self { folder, file }
+    struct Noisy {
+        folder: String,
+        file: String,
     }
-}
 
-impl Drop for Noisy {
-    fn drop(&mut self) {
-        let _ = fs::remove_dir_all(format!("./{}", self.folder));
+    impl Noisy {
+        #[allow(dead_code)]
+        fn new() -> Self {
+            let (folder, file) = (
+                Uuid::new_v4().to_string(),
+                format!("{}.toml", Uuid::new_v4()),
+            );
+
+            let config = Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string(),
+            };
+
+            search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str(), &config)
+                .unwrap();
+            Self { folder, file }
+        }
     }
-}
 
-#[test]
-fn should_call_config() {
-    let Noisy { folder, file } = &Noisy::new();
+    impl Drop for Noisy {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(format!("./{}", self.folder));
+        }
+    }
 
-    let mut cmd = Command::cargo_bin("setuprs").unwrap();
-    cmd.arg("--config")
-        .arg(format!("./{folder}/{file}"))
-        .assert()
-        .success();
-    cmd.arg("--current-config").assert().success();
+    #[test]
+    fn current_config_should_return_correct_default_info() {
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        let value = cmd
+            .arg("--current-config")
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+
+        let raw_stdout = String::from_utf8(value.stdout);
+
+        assert_eq!(
+            Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
+            Config::default()
+        )
+    }
+
+    #[test]
+    fn current_config_should_return_correct_info_after_define_new_config() {
+        let Noisy { folder, file } = &Noisy::new();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success();
+
+        let value = cmd
+            .arg("--current-config")
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+
+        let raw_stdout = String::from_utf8(value.stdout);
+
+        assert_eq!(
+            Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
+            Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string()
+            }
+        )
+    }
 }
