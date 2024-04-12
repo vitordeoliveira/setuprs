@@ -29,6 +29,8 @@ enum Commands {
     },
 }
 
+// TODO: .setuprsignore.toml
+// TODO: snapshots metadata -> add tags (names) to the snapshots
 impl Cli {
     pub fn execute() {
         let cli = Cli::parse();
@@ -76,9 +78,10 @@ mod tests {
 
     use assert_cmd::Command;
 
+    use crate::Noisy;
+
     use super::*;
 
-    #[allow(dead_code)]
     struct Noisy {
         folder: String,
         file: String,
@@ -156,5 +159,19 @@ mod tests {
                 snapshots_path: ".".to_string()
             }
         )
+    }
+
+    // TODO: Test if snapshots is being created with success
+    #[test]
+    fn snapshots_created_with_success() {
+        let Noisy { folder, file } = &Noisy::new();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success();
+
+        cmd.arg("snapshot").arg("-d").arg(".");
     }
 }
