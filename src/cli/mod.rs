@@ -78,18 +78,21 @@ mod tests {
 
     use assert_cmd::Command;
 
-    use crate::Noisy;
-
     use super::*;
 
     struct Noisy {
-        folder: String,
-        file: String,
+        configuration: Option<(String, String)>,
     }
 
     impl Noisy {
         #[allow(dead_code)]
         fn new() -> Self {
+            Self {
+                configuration: None,
+            }
+        }
+
+        fn set_configuration_folder(&mut self) -> &mut Self {
             let (folder, file) = (
                 Uuid::new_v4().to_string(),
                 format!("{}.toml", Uuid::new_v4()),
@@ -103,13 +106,18 @@ mod tests {
 
             search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str(), &config)
                 .unwrap();
-            Self { folder, file }
+
+            self.configuration = Some((folder, file));
+
+            self
         }
     }
 
     impl Drop for Noisy {
         fn drop(&mut self) {
-            let _ = fs::remove_dir_all(format!("./{}", self.folder));
+            if self.configuration.is_some() {
+                let _ = fs::remove_dir_all(format!("./{}", self.configuration.as_ref().unwrap().0));
+            }
         }
     }
 
@@ -134,37 +142,46 @@ mod tests {
 
     #[test]
     fn current_config_should_return_correct_info_after_define_new_config() {
-        let Noisy { folder, file } = &Noisy::new();
+        match &Noisy::new().set_configuration_folder().configuration {
+            Some((folder, file)) => {
+                let mut cmd = Command::cargo_bin("setuprs").unwrap();
+                cmd.arg("--config")
+                    .arg(format!("./{folder}/{file}"))
+                    .assert()
+                    .success();
 
-        let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        cmd.arg("--config")
-            .arg(format!("./{folder}/{file}"))
-            .assert()
-            .success();
+                let value = cmd
+                    .arg("--current-config")
+                    .assert()
+                    .success()
+                    .get_output()
+                    .clone();
 
-        let value = cmd
-            .arg("--current-config")
-            .assert()
-            .success()
-            .get_output()
-            .clone();
+                let raw_stdout = String::from_utf8(value.stdout);
 
-        let raw_stdout = String::from_utf8(value.stdout);
-
-        assert_eq!(
-            Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
-            Config {
-                config_file_path: ".".to_string(),
-                debug_mode: "error".to_string(),
-                snapshots_path: ".".to_string()
+                assert_eq!(
+                    Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
+                    Config {
+                        config_file_path: ".".to_string(),
+                        debug_mode: "error".to_string(),
+                        snapshots_path: ".".to_string()
+                    }
+                )
             }
-        )
+            None => panic!("error"),
+        };
     }
 
-    // TODO: Test if snapshots is being created with success
+    // // TODO: Test if snapshots is being created with success
     #[test]
     fn snapshots_created_with_success() {
-        let Noisy { folder, file } = &Noisy::new();
+        let mut binding = Noisy::new();
+        let noisy = binding.set_configuration_folder();
+
+        let (folder, file) = match &noisy.configuration {
+            Some((folder, file)) => (folder, file),
+            None => panic!("error"),
+        };
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
         cmd.arg("--config")
