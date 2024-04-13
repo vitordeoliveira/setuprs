@@ -13,7 +13,7 @@ use uuid::Uuid;
 pub mod cli;
 
 #[derive(PartialEq, Deserialize, Debug)]
-struct Config {
+pub struct Config {
     pub config_file_path: String,
     pub debug_mode: String,
     pub snapshots_path: String,
@@ -42,7 +42,7 @@ impl Display for Config {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-struct ParseConfigError;
+pub struct ParseConfigError;
 
 impl FromStr for Config {
     type Err = ParseConfigError;
@@ -87,7 +87,7 @@ impl FromStr for Config {
     }
 }
 
-fn search_file_create_config_folder_if_not_found(
+pub fn search_file_create_config_folder_if_not_found(
     folder_path_and_file: &str,
     Config {
         snapshots_path,
@@ -119,18 +119,25 @@ fn search_file_create_config_folder_if_not_found(
     Ok(file_path.to_path_buf())
 }
 
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {
     fs::create_dir_all(&dst)?;
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
 
-        if entry.file_name() == ".git" || entry.file_name() == "snapshots" || *entry.file_name() == *id {
+        if entry.file_name() == ".git"
+            || entry.file_name() == "snapshots"
+            || *entry.file_name() == *id
+        {
             continue;
         }
 
         if ty.is_dir() {
-            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()), id.clone())?;
+            copy_dir_all(
+                entry.path(),
+                dst.as_ref().join(entry.file_name()),
+                id.clone(),
+            )?;
         } else {
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
         }
