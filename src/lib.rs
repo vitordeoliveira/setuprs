@@ -26,7 +26,7 @@ impl Default for Config {
         Self {
             config_file_path: format!("{home}/.config/setuprs/setuprs.toml"),
             debug_mode: "error".to_string(),
-            snapshots_path: format!("{home}/.config/setuprs/"),
+            snapshots_path: format!("{home}/.config/setuprs/snapshots/"),
         }
     }
 }
@@ -87,7 +87,7 @@ impl FromStr for Config {
     }
 }
 
-fn search_file_create_folder_if_not_found(
+fn search_file_create_config_folder_if_not_found(
     folder_path_and_file: &str,
     Config {
         snapshots_path,
@@ -119,28 +119,20 @@ fn search_file_create_folder_if_not_found(
     Ok(file_path.to_path_buf())
 }
 
-fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: &str) -> io::Result<()> {
-    let new_dst = PathBuf::from(format!("{}/{}", dst.as_ref().display(), id));
-
-    fs::create_dir_all(&new_dst)?;
-
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {
+    fs::create_dir_all(&dst)?;
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
 
-        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
-            println!("{:?}", entry.file_name());
+        if entry.file_name() == ".git" || entry.file_name() == "snapshots" || *entry.file_name() == *id {
             continue;
         }
 
         if ty.is_dir() {
-            copy_dir_all(
-                entry.path(),
-                &new_dst.join(entry.file_name()),
-                &Uuid::new_v4().to_string(),
-            )?;
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()), id.clone())?;
         } else {
-            fs::copy(entry.path(), &new_dst.join(entry.file_name()))?;
+            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
         }
     }
     Ok(())
@@ -166,8 +158,11 @@ impl Noisy {
             snapshots_path: ".".to_string(),
         };
 
-        search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str(), &config)
-            .unwrap();
+        search_file_create_config_folder_if_not_found(
+            format!("./{folder}/{file}").as_str(),
+            &config,
+        )
+        .unwrap();
         Self { folder, file }
     }
 }
@@ -192,9 +187,9 @@ fn should_create_folder_and_file() {
 #[test]
 fn should_copy_folder_recurcivilly() {
     let Noisy { folder, file } = &Noisy::new();
-    copy_dir_all(folder, "./test_folder_copy", "test_id").unwrap();
+    copy_dir_all(folder, "./test_folder_copy", "test_id".to_string()).unwrap();
 
-    let file: String = fs::read_to_string(format!("./test_folder_copy/test_id/{file}")).unwrap();
+    let file: String = fs::read_to_string(format!("./test_folder_copy/{file}")).unwrap();
     assert_eq!(
         file,
         "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"

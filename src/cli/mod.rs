@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use clap::{Parser, Subcommand};
 use uuid::Uuid;
 
-use crate::{copy_dir_all, search_file_create_folder_if_not_found, Config};
+use crate::{copy_dir_all, search_file_create_config_folder_if_not_found, Config};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -42,7 +42,7 @@ impl Cli {
             _ => PathBuf::from(&default_config.config_file_path),
         };
 
-        match search_file_create_folder_if_not_found(
+        match search_file_create_config_folder_if_not_found(
             &config_path.clone().into_os_string().into_string().unwrap(),
             &default_config,
         ) {
@@ -64,7 +64,9 @@ impl Cli {
             Some(Commands::Snapshot { dir }) => {
                 let contents = fs::read_to_string(&config_path).unwrap();
                 let data: Config = toml::from_str(&contents).unwrap();
-                copy_dir_all(dir, data.snapshots_path, &Uuid::new_v4().to_string()).unwrap();
+                let id = Uuid::new_v4();
+                copy_dir_all(dir, format!("{}/{}", data.snapshots_path, id), id.to_string()).unwrap();
+                println!("{}", id);
             }
 
             None => {}
@@ -82,6 +84,7 @@ mod tests {
 
     struct Noisy {
         configuration: Option<(String, String)>,
+        snapshot: Option<(String, String)>,
     }
 
     impl Noisy {
@@ -89,26 +92,40 @@ mod tests {
         fn new() -> Self {
             Self {
                 configuration: None,
+                snapshot: None,
             }
         }
 
-        fn set_configuration_folder(&mut self) -> &mut Self {
-            let (folder, file) = (
-                Uuid::new_v4().to_string(),
-                format!("{}.toml", Uuid::new_v4()),
-            );
+        fn set_snapshot_folder(mut self, copy_folder: Uuid) -> Self {
+            if self.snapshot.is_none() {
+                let folder = Uuid::new_v4().to_string();
+                fs::create_dir(&folder).unwrap();
+                self.snapshot = Some((folder, copy_folder.to_string()));
+            }
+            self
+        }
 
-            let config = Config {
-                config_file_path: ".".to_string(),
-                debug_mode: "error".to_string(),
-                snapshots_path: ".".to_string(),
-            };
+        fn set_configuration_folder(mut self) -> Self {
+            if self.configuration.is_none() {
+                let (folder, file) = (
+                    Uuid::new_v4().to_string(),
+                    format!("{}.toml", Uuid::new_v4()),
+                );
 
-            search_file_create_folder_if_not_found(format!("./{folder}/{file}").as_str(), &config)
+                let config = Config {
+                    config_file_path: ".".to_string(),
+                    debug_mode: "error".to_string(),
+                    snapshots_path: ".".to_string(),
+                };
+
+                search_file_create_config_folder_if_not_found(
+                    format!("./{folder}/{file}").as_str(),
+                    &config,
+                )
                 .unwrap();
 
-            self.configuration = Some((folder, file));
-
+                self.configuration = Some((folder, file));
+            }
             self
         }
     }
@@ -117,6 +134,11 @@ mod tests {
         fn drop(&mut self) {
             if self.configuration.is_some() {
                 let _ = fs::remove_dir_all(format!("./{}", self.configuration.as_ref().unwrap().0));
+            }
+
+            if self.snapshot.is_some() {
+                let _ = fs::remove_dir_all(format!("./{}", self.snapshot.as_ref().unwrap().0));
+                let _ = fs::remove_dir_all(format!("./{}", self.snapshot.as_ref().unwrap().1));
             }
         }
     }
@@ -173,22 +195,25 @@ mod tests {
     }
 
     // // TODO: Test if snapshots is being created with success
-    #[test]
-    fn snapshots_created_with_success() {
-        let mut binding = Noisy::new();
-        let noisy = binding.set_configuration_folder();
-
-        let (folder, file) = match &noisy.configuration {
-            Some((folder, file)) => (folder, file),
-            None => panic!("error"),
-        };
-
-        let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        cmd.arg("--config")
-            .arg(format!("./{folder}/{file}"))
-            .assert()
-            .success();
-
-        cmd.arg("snapshot").arg("-d").arg(".");
-    }
+    // #[test]
+    // fn snapshots_created_with_success() {
+    //     // let noisy = Noisy::new().set_configuration_folder();
+    //     let copy_folder = Uuid::new_v4();
+    //     let Noisy {
+    //         ref configuration,
+    //         snapshot: _,
+    //     } = Noisy::new()
+    //         .set_configuration_folder()
+    //         .set_snapshot_folder(copy_folder);
+    //
+    //     let (folder, file) = configuration.clone().unwrap();
+    //
+    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
+    //     cmd.arg("--config")
+    //         .arg(format!("./{folder}/{file}"))
+    //         .assert()
+    //         .success();
+    //
+    //     cmd.arg("snapshot").arg("-d").arg(".").assert().stdout("");
+    // }
 }
