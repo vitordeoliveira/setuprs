@@ -1,4 +1,8 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    io::{self, Write},
+    path::PathBuf,
+};
 
 use clap::Parser;
 use setuprs::{
@@ -46,6 +50,7 @@ fn main() {
                 id.to_string(),
             )
             .unwrap();
+
             println!("{}", id);
         }
 
@@ -63,7 +68,6 @@ mod tests {
 
     struct Noisy {
         configuration: Option<(String, String)>,
-        snapshot: Option<(String, String)>,
     }
 
     impl Noisy {
@@ -71,17 +75,7 @@ mod tests {
         fn new() -> Self {
             Self {
                 configuration: None,
-                snapshot: None,
             }
-        }
-
-        fn set_snapshot_folder(mut self, copy_folder: Uuid) -> Self {
-            if self.snapshot.is_none() {
-                let folder = Uuid::new_v4().to_string();
-                fs::create_dir(&folder).unwrap();
-                self.snapshot = Some((folder, copy_folder.to_string()));
-            }
-            self
         }
 
         fn set_configuration_folder(mut self) -> Self {
@@ -113,11 +107,6 @@ mod tests {
         fn drop(&mut self) {
             if self.configuration.is_some() {
                 let _ = fs::remove_dir_all(format!("./{}", self.configuration.as_ref().unwrap().0));
-            }
-
-            if self.snapshot.is_some() {
-                let _ = fs::remove_dir_all(format!("./{}", self.snapshot.as_ref().unwrap().0));
-                let _ = fs::remove_dir_all(format!("./{}", self.snapshot.as_ref().unwrap().1));
             }
         }
     }
@@ -173,26 +162,46 @@ mod tests {
         };
     }
 
-    // // TODO: Test if snapshots is being created with success
-    // #[test]
-    // fn snapshots_created_with_success() {
-    //     // let noisy = Noisy::new().set_configuration_folder();
-    //     let copy_folder = Uuid::new_v4();
-    //     let Noisy {
-    //         ref configuration,
-    //         snapshot: _,
-    //     } = Noisy::new()
-    //         .set_configuration_folder()
-    //         .set_snapshot_folder(copy_folder);
-    //
-    //     let (folder, file) = configuration.clone().unwrap();
-    //
-    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
-    //     cmd.arg("--config")
-    //         .arg(format!("./{folder}/{file}"))
-    //         .assert()
-    //         .success();
-    //
-    //     cmd.arg("snapshot").arg("-d").arg(".").assert().stdout("");
-    // }
+    #[test]
+    fn snapshots_created_with_success() {
+        let Noisy { ref configuration } = Noisy::new().set_configuration_folder();
+
+        let (folder, file) = configuration.clone().unwrap();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success();
+
+        let value = cmd
+            .arg("snapshot")
+            .arg("-d")
+            .arg(format!("./{folder}"))
+            .assert()
+            .get_output()
+            .clone();
+
+        let binding = String::from_utf8(value.stdout).unwrap();
+        let snapshot_file = binding.lines().collect::<Vec<_>>()[1];
+
+        // TODO: hey dump.... you should read from toml not from_str here
+        let read_copied_file: String =
+            fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
+
+        println!("{read_copied_file}");
+
+        let test = Config::from_str(&read_copied_file).unwrap();
+
+        assert_eq!(
+            Config::from_str(&read_copied_file).unwrap(),
+            Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string()
+            }
+        );
+
+        fs::remove_dir_all(snapshot_file).unwrap()
+    }
 }

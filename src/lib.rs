@@ -53,7 +53,10 @@ impl FromStr for Config {
         let mut debug_mode = None;
 
         for line in s.lines() {
-            let parts: Vec<&str> = line.split(':').map(|s| s.trim()).collect();
+            let parts: Vec<&str> = line
+                .split(|c| c == ':' || c == '=')
+                .map(|s| s.trim())
+                .collect();
 
             if parts.len() == 2 {
                 let (key, value) = (parts[0], parts[1]);
