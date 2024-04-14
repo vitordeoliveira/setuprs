@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    io::{self, Write},
-    path::PathBuf,
-};
+use std::{fs, path::PathBuf};
 
 use clap::Parser;
 use setuprs::{
@@ -68,14 +64,20 @@ mod tests {
 
     struct Noisy {
         configuration: Option<(String, String)>,
+        cleanup: Box<dyn Fn()>,
     }
 
     impl Noisy {
         #[allow(dead_code)]
-        fn new() -> Self {
+        fn new(closure: Box<dyn Fn()>) -> Self {
             Self {
                 configuration: None,
+                cleanup: closure,
             }
+        }
+
+        fn overwrite_cleanup(&mut self, closure: Box<dyn Fn()>) {
+            self.cleanup = Box::new(closure);
         }
 
         fn set_configuration_folder(mut self) -> Self {
@@ -105,9 +107,12 @@ mod tests {
 
     impl Drop for Noisy {
         fn drop(&mut self) {
-            if self.configuration.is_some() {
-                let _ = fs::remove_dir_all(format!("./{}", self.configuration.as_ref().unwrap().0));
+            println!("DROP");
+            if let Some((folder, _)) = &self.configuration {
+                let _ = fs::remove_dir_all(format!("./{}", folder));
             }
+
+            (self.cleanup)();
         }
     }
 
@@ -132,7 +137,10 @@ mod tests {
 
     #[test]
     fn current_config_should_return_correct_info_after_define_new_config() {
-        match &Noisy::new().set_configuration_folder().configuration {
+        match &Noisy::new(Box::new(|| {}))
+            .set_configuration_folder()
+            .configuration
+        {
             Some((folder, file)) => {
                 let mut cmd = Command::cargo_bin("setuprs").unwrap();
                 cmd.arg("--config")
@@ -164,9 +172,9 @@ mod tests {
 
     #[test]
     fn snapshots_created_with_success() {
-        let Noisy { ref configuration } = Noisy::new().set_configuration_folder();
+        let mut noisy = Noisy::new(Box::new(|| {})).set_configuration_folder();
 
-        let (folder, file) = configuration.clone().unwrap();
+        let (folder, file) = noisy.configuration.clone().unwrap();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
         cmd.arg("--config")
@@ -183,25 +191,32 @@ mod tests {
             .clone();
 
         let binding = String::from_utf8(value.stdout).unwrap();
-        let snapshot_file = binding.lines().collect::<Vec<_>>()[1];
+        let snapshot_file = binding
+            .lines()
+            .nth(1)
+            .expect("No second line found")
+            .to_string();
 
-        // TODO: hey dump.... you should read from toml not from_str here
+        let snapshot_file_clone = snapshot_file.clone();
+        noisy.overwrite_cleanup(Box::new(move || {
+            println!("DEFINED");
+            fs::remove_dir_all(&snapshot_file_clone).unwrap();
+        }));
+
+        println!("READCOPY");
+
         let read_copied_file: String =
             fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
 
-        println!("{read_copied_file}");
-
-        let test = Config::from_str(&read_copied_file).unwrap();
+        let config: Config = toml::from_str(&read_copied_file).unwrap();
 
         assert_eq!(
-            Config::from_str(&read_copied_file).unwrap(),
+            config,
             Config {
                 config_file_path: ".".to_string(),
                 debug_mode: "error".to_string(),
                 snapshots_path: ".".to_string()
             }
         );
-
-        fs::remove_dir_all(snapshot_file).unwrap()
     }
 }
