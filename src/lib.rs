@@ -1,6 +1,6 @@
 use std::{
     env,
-    fmt::Display,
+    fmt::{format, Display},
     fs,
     io::{self, Write},
     path::{Path, PathBuf},
@@ -94,15 +94,15 @@ pub fn search_file_create_config_folder_if_not_found(
         debug_mode,
         config_file_path,
     }: &Config,
-) -> Result<PathBuf, std::io::Error> {
+) -> Result<String, std::io::Error> {
     let file_path = Path::new(folder_path_and_file);
 
+    let mut response = String::new();
     // Extract the parent directory path
     let parent_dir = file_path
         .parent()
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid path"))?;
 
-    // TODO: only if the dir or the file is created stdout the path
     if !parent_dir.exists() {
         fs::create_dir_all(parent_dir)?;
     }
@@ -115,9 +115,12 @@ pub fn search_file_create_config_folder_if_not_found(
         )
             .as_bytes(),
         )?;
+
+        let val = format!("Created file: {}", file_path.display());
+        response.push_str(val.as_str());
     }
 
-    Ok(file_path.to_path_buf())
+    Ok(response)
 }
 
 pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {

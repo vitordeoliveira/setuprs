@@ -17,13 +17,12 @@ fn main() {
         _ => PathBuf::from(&default_config.config_file_path),
     };
 
-    // TODO: This need to be changed
     match search_file_create_config_folder_if_not_found(
         &config_path.clone().into_os_string().into_string().unwrap(),
         &default_config,
     ) {
         Ok(path) => {
-            println!("File '{:?}'", path);
+            println!("{}", path);
         }
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -83,6 +82,18 @@ mod tests {
 
         fn overwrite_cleanup(&mut self, closure: Box<dyn Fn()>) {
             self.cleanup = Some(Box::new(closure));
+        }
+
+        fn set_configuration_folder_without_create(mut self) -> Self {
+            if self.configuration.is_none() {
+                let (folder, file) = (
+                    Uuid::new_v4().to_string(),
+                    format!("{}.toml", Uuid::new_v4()),
+                );
+
+                self.configuration = Some((folder, file));
+            }
+            self
         }
 
         fn set_configuration_folder(mut self) -> Self {
@@ -272,6 +283,44 @@ mod tests {
         );
     }
 
-    // TEST: if folder created stdout path
-    // TEST: if folder already exist stdout path should NOT return
+    #[test]
+    fn if_folder_config_folder_not_exist_should_stdout_filepath() {
+        let noisy = Noisy::new(None).set_configuration_folder_without_create();
+        let (folder, file) = noisy.configuration.clone().unwrap();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        let output = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+
+        let binding = String::from_utf8(output.stdout).unwrap();
+        let snapshot_file = binding.lines().next().expect("No line found").to_string();
+
+        let expected = format!("Created file: ./{folder}/{file}");
+        assert_eq!(snapshot_file, expected);
+    }
+
+    #[test]
+    fn if_folder_config_folder_exist_should_not_stdout_filepath() {
+        let noisy = Noisy::new(None).set_configuration_folder();
+        let (folder, file) = noisy.configuration.clone().unwrap();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        let output = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+
+        let binding = String::from_utf8(output.stdout).unwrap();
+        let snapshot_file = binding.lines().next().expect("No line found").to_string();
+
+        assert_eq!(snapshot_file, "");
+    }
 }
