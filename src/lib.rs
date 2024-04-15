@@ -102,6 +102,7 @@ pub fn search_file_create_config_folder_if_not_found(
         .parent()
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput, "Invalid path"))?;
 
+    // TODO: only if the dir or the file is created stdout the path
     if !parent_dir.exists() {
         fs::create_dir_all(parent_dir)?;
     }

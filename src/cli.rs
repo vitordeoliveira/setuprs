@@ -30,4 +30,6 @@ pub enum Commands {
 }
 
 // TODO: .setuprsignore.toml
-// TODO: snapshots metadata -> add tags (names) to the snapshots
+// TODO: snapshots metadata
+// PERF: add tags (names) to the snapshots
+// TODO: add TUI with RataTUI.rs

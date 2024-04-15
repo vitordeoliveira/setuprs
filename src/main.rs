@@ -17,6 +17,7 @@ fn main() {
         _ => PathBuf::from(&default_config.config_file_path),
     };
 
+    // TODO: This need to be changed
     match search_file_create_config_folder_if_not_found(
         &config_path.clone().into_os_string().into_string().unwrap(),
         &default_config,
@@ -73,11 +74,10 @@ mod tests {
     }
 
     impl Noisy {
-        #[allow(dead_code)]
-        fn new() -> Self {
+        fn new(cleanup: Option<Box<dyn Fn()>>) -> Self {
             Self {
                 configuration: None,
-                cleanup: None,
+                cleanup,
             }
         }
 
@@ -145,7 +145,7 @@ mod tests {
 
     #[test]
     fn current_config_should_return_correct_info_after_define_new_config() {
-        match &Noisy::new().set_configuration_folder().configuration {
+        match &Noisy::new(None).set_configuration_folder().configuration {
             Some((folder, file)) => {
                 let mut cmd = Command::cargo_bin("setuprs").unwrap();
                 cmd.arg("--config")
@@ -177,7 +177,7 @@ mod tests {
 
     #[test]
     fn snapshots_created_with_success() {
-        let mut noisy = Noisy::new().set_configuration_folder();
+        let mut noisy = Noisy::new(None).set_configuration_folder();
 
         let (folder, file) = noisy.configuration.clone().unwrap();
 
@@ -203,6 +203,7 @@ mod tests {
             .to_string();
 
         let snapshot_file_clone = snapshot_file.clone();
+
         noisy.overwrite_cleanup(Box::new(move || {
             fs::remove_dir_all(&snapshot_file_clone).unwrap();
         }));
@@ -224,7 +225,10 @@ mod tests {
 
     #[test]
     fn snapshots_created_with_tag_success() {
-        let mut noisy = Noisy::new().set_configuration_folder();
+        let noisy = Noisy::new(Some(Box::new(|| {
+            fs::remove_dir_all("tag_name").unwrap();
+        })))
+        .set_configuration_folder();
 
         let (folder, file) = noisy.configuration.clone().unwrap();
 
@@ -252,10 +256,6 @@ mod tests {
             .expect("No second line found")
             .to_string();
 
-        noisy.overwrite_cleanup(Box::new(move || {
-            fs::remove_dir_all("tag_name").unwrap();
-        }));
-
         let read_copied_file: String =
             fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
 
@@ -271,4 +271,7 @@ mod tests {
             }
         );
     }
+
+    // TEST: if folder created stdout path
+    // TEST: if folder already exist stdout path should NOT return
 }
