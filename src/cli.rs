@@ -23,6 +23,9 @@ pub enum Commands {
     Snapshot {
         #[arg(short, long)]
         dir: String,
+
+        #[arg(short, long)]
+        tag: Option<String>,
     },
 }
 

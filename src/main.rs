@@ -36,10 +36,15 @@ fn main() {
     }
 
     match &cli.command {
-        Some(Commands::Snapshot { dir }) => {
+        Some(Commands::Snapshot { dir, tag }) => {
             let contents = fs::read_to_string(&config_path).unwrap();
             let data: Config = toml::from_str(&contents).unwrap();
-            let id = Uuid::new_v4();
+
+            let id = match tag {
+                Some(tag_value) => tag_value.to_string(),
+                None => Uuid::new_v4().to_string(),
+            };
+
             copy_dir_all(
                 dir,
                 format!("{}/{}", data.snapshots_path, id),
@@ -64,20 +69,20 @@ mod tests {
 
     struct Noisy {
         configuration: Option<(String, String)>,
-        cleanup: Box<dyn Fn()>,
+        cleanup: Option<Box<dyn Fn()>>,
     }
 
     impl Noisy {
         #[allow(dead_code)]
-        fn new(closure: Box<dyn Fn()>) -> Self {
+        fn new() -> Self {
             Self {
                 configuration: None,
-                cleanup: closure,
+                cleanup: None,
             }
         }
 
         fn overwrite_cleanup(&mut self, closure: Box<dyn Fn()>) {
-            self.cleanup = Box::new(closure);
+            self.cleanup = Some(Box::new(closure));
         }
 
         fn set_configuration_folder(mut self) -> Self {
@@ -112,7 +117,10 @@ mod tests {
                 let _ = fs::remove_dir_all(format!("./{}", folder));
             }
 
-            (self.cleanup)();
+            match &self.cleanup {
+                Some(f) => f(),
+                None => {}
+            }
         }
     }
 
@@ -137,10 +145,7 @@ mod tests {
 
     #[test]
     fn current_config_should_return_correct_info_after_define_new_config() {
-        match &Noisy::new(Box::new(|| {}))
-            .set_configuration_folder()
-            .configuration
-        {
+        match &Noisy::new().set_configuration_folder().configuration {
             Some((folder, file)) => {
                 let mut cmd = Command::cargo_bin("setuprs").unwrap();
                 cmd.arg("--config")
@@ -172,7 +177,7 @@ mod tests {
 
     #[test]
     fn snapshots_created_with_success() {
-        let mut noisy = Noisy::new(Box::new(|| {})).set_configuration_folder();
+        let mut noisy = Noisy::new().set_configuration_folder();
 
         let (folder, file) = noisy.configuration.clone().unwrap();
 
@@ -199,17 +204,64 @@ mod tests {
 
         let snapshot_file_clone = snapshot_file.clone();
         noisy.overwrite_cleanup(Box::new(move || {
-            println!("DEFINED");
             fs::remove_dir_all(&snapshot_file_clone).unwrap();
         }));
-
-        println!("READCOPY");
 
         let read_copied_file: String =
             fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
 
         let config: Config = toml::from_str(&read_copied_file).unwrap();
 
+        assert_eq!(
+            config,
+            Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn snapshots_created_with_tag_success() {
+        let mut noisy = Noisy::new().set_configuration_folder();
+
+        let (folder, file) = noisy.configuration.clone().unwrap();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .assert()
+            .success();
+
+        let value = cmd
+            .arg("snapshot")
+            .arg("-d")
+            .arg(format!("./{folder}"))
+            .arg("-t")
+            .arg("tag_name")
+            .assert()
+            .success()
+            .get_output()
+            .clone();
+
+        let binding = String::from_utf8(value.stdout).unwrap();
+        let snapshot_file = binding
+            .lines()
+            .nth(1)
+            .expect("No second line found")
+            .to_string();
+
+        noisy.overwrite_cleanup(Box::new(move || {
+            fs::remove_dir_all("tag_name").unwrap();
+        }));
+
+        let read_copied_file: String =
+            fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
+
+        let config: Config = toml::from_str(&read_copied_file).unwrap();
+
+        assert_eq!(snapshot_file, "tag_name");
         assert_eq!(
             config,
             Config {
