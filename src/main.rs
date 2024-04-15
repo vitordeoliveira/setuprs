@@ -22,7 +22,9 @@ fn main() {
         &default_config,
     ) {
         Ok(path) => {
-            println!("{}", path);
+            if !path.is_empty() {
+                println!("{}", path);
+            }
         }
         Err(err) => {
             eprintln!("Error: {}", err);
@@ -54,6 +56,8 @@ fn main() {
 
             println!("{}", id);
         }
+
+        Some(Commands::Init {}) => {}
 
         None => {}
     };
@@ -209,7 +213,7 @@ mod tests {
         let binding = String::from_utf8(value.stdout).unwrap();
         let snapshot_file = binding
             .lines()
-            .nth(1)
+            .next()
             .expect("No second line found")
             .to_string();
 
@@ -261,11 +265,7 @@ mod tests {
             .clone();
 
         let binding = String::from_utf8(value.stdout).unwrap();
-        let snapshot_file = binding
-            .lines()
-            .nth(1)
-            .expect("No second line found")
-            .to_string();
+        let snapshot_file = binding.lines().next().expect("No line found").to_string();
 
         let read_copied_file: String =
             fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
@@ -319,7 +319,7 @@ mod tests {
             .clone();
 
         let binding = String::from_utf8(output.stdout).unwrap();
-        let snapshot_file = binding.lines().next().expect("No line found").to_string();
+        let snapshot_file = binding.to_string();
 
         assert_eq!(snapshot_file, "");
     }

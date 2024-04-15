@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about = None, arg_required_else_help=true)]
 pub struct Cli {
     /// Sets a custom config file
     #[arg(short, long, value_name = "TOML FILE")]
@@ -27,6 +27,11 @@ pub enum Commands {
         #[arg(short, long)]
         tag: Option<String>,
     },
+
+    /// Select snapshot
+    Init {
+
+    }
 }
 
 // TODO: .setuprsignore.toml

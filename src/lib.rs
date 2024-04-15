@@ -1,9 +1,9 @@
 use std::{
     env,
-    fmt::{format, Display},
+    fmt::Display,
     fs,
     io::{self, Write},
-    path::{Path, PathBuf},
+    path::Path,
     str::FromStr,
 };
 
