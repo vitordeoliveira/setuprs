@@ -1,11 +1,15 @@
 use std::{fs, path::PathBuf};
 
 use clap::Parser;
+use crossterm::event::{self, KeyCode, KeyEventKind};
 use setuprs::{
     cli::{Cli, Commands},
-    copy_dir_all, search_file_create_config_folder_if_not_found, Config,
+    copy_dir_all, search_file_create_config_folder_if_not_found,
+    tui::{ui, Tui},
+    App, Config,
 };
 use uuid::Uuid;
+mod tui;
 
 fn main() {
     let cli = Cli::parse();
@@ -59,7 +63,31 @@ fn main() {
 
         Some(Commands::Init {}) => {}
 
-        None => {}
+        None => {
+            let mut tui = Tui::new().unwrap();
+            tui.enter().unwrap();
+
+            let mut app = App::default();
+            loop {
+                tui.terminal.draw(|f| ui(f, &mut app)).unwrap();
+                if let event::Event::Key(key) = event::read().unwrap() {
+                    if key.kind == KeyEventKind::Press {
+                        match key.code {
+                            KeyCode::Char('q') => break,
+                            KeyCode::Right => app.left_size += 1,
+                            KeyCode::Left => {
+                                if app.left_size > 0 {
+                                    app.left_size -= 1
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+
+            tui.exit().unwrap();
+        }
     };
 }
 
