@@ -64,8 +64,8 @@ async fn main() -> Result<()> {
         Some(Commands::Init {}) => {}
 
         None => {
-            // let mut app = App::new()?;
-            App::run()?;
+            let mut app = App::new()?;
+            app.run().await?;
         }
     };
 

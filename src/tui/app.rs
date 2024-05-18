@@ -10,7 +10,11 @@ pub struct App {
 
 #[allow(dead_code)]
 impl App {
-    pub fn run() -> Result<()> {
+    pub fn new() -> Result<Self> {
+        Ok(Self::default())
+    }
+
+    pub async fn run(&mut self) -> Result<()> {
         let mut tui = Tui::new()?;
         tui.enter()?;
 
