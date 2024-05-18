@@ -1,17 +1,17 @@
 use std::{fs, path::PathBuf};
 
 use clap::Parser;
-use crossterm::event::{self, KeyCode, KeyEventKind};
+use color_eyre::eyre::Result;
 use setuprs::{
     cli::{Cli, Commands},
     copy_dir_all, search_file_create_config_folder_if_not_found,
-    tui::{ui, Tui},
-    App, Config,
+    tui::app::App,
+    Config,
 };
 use uuid::Uuid;
 mod tui;
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let default_config = Config::default();
@@ -36,15 +36,15 @@ fn main() {
     }
 
     if cli.current_config {
-        let contents = fs::read_to_string(&config_path).unwrap();
-        let data = toml::from_str::<Config>(&contents).unwrap();
+        let contents = fs::read_to_string(&config_path)?;
+        let data = toml::from_str::<Config>(&contents)?;
         println!("{data}");
     }
 
     match &cli.command {
         Some(Commands::Snapshot { dir, tag }) => {
-            let contents = fs::read_to_string(&config_path).unwrap();
-            let data: Config = toml::from_str(&contents).unwrap();
+            let contents = fs::read_to_string(&config_path)?;
+            let data: Config = toml::from_str(&contents)?;
 
             let id = match tag {
                 Some(tag_value) => tag_value.to_string(),
@@ -55,8 +55,7 @@ fn main() {
                 dir,
                 format!("{}/{}", data.snapshots_path, id),
                 id.to_string(),
-            )
-            .unwrap();
+            )?;
 
             println!("{}", id);
         }
@@ -64,31 +63,12 @@ fn main() {
         Some(Commands::Init {}) => {}
 
         None => {
-            let mut tui = Tui::new().unwrap();
-            tui.enter().unwrap();
-
-            let mut app = App::default();
-            loop {
-                tui.terminal.draw(|f| ui(f, &mut app)).unwrap();
-                if let event::Event::Key(key) = event::read().unwrap() {
-                    if key.kind == KeyEventKind::Press {
-                        match key.code {
-                            KeyCode::Char('q') => break,
-                            KeyCode::Right => app.left_size += 1,
-                            KeyCode::Left => {
-                                if app.left_size > 0 {
-                                    app.left_size -= 1
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            }
-
-            tui.exit().unwrap();
+            // let mut app = App::new()?;
+            App::run()?;
         }
     };
+
+    Ok(())
 }
 
 #[cfg(test)]

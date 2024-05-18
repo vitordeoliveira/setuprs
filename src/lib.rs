@@ -13,11 +13,6 @@ use uuid::Uuid;
 pub mod cli;
 pub mod tui;
 
-#[derive(Debug, Default)]
-pub struct App {
-    pub left_size: u16,
-}
-
 #[derive(PartialEq, Deserialize, Debug)]
 pub struct Config {
     pub config_file_path: String,
