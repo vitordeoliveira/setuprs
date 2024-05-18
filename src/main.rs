@@ -11,7 +11,8 @@ use setuprs::{
 use uuid::Uuid;
 mod tui;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let default_config = Config::default();
