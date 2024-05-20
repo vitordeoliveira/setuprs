@@ -1,10 +1,13 @@
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
+use tokio::select;
+use tokio_util::sync::CancellationToken;
 
 use super::{ui::ui, Tui};
 
 struct EventHandler {
     rx: tokio::sync::mpsc::UnboundedReceiver<KeyCode>,
+    stop_cancellation_token: CancellationToken,
 }
 
 #[derive(Debug, Default)]
@@ -16,8 +19,16 @@ impl EventHandler {
     fn new() -> Self {
         let tick_rate = std::time::Duration::from_millis(250);
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let stop_cancellation_token = CancellationToken::new();
+        let _stop_cancellation_token = stop_cancellation_token.clone();
         tokio::spawn(async move {
             loop {
+                select! {
+                    _ = _stop_cancellation_token.cancelled() => {
+                        break;
+                    }
+
+                    _ = async {
                 if event::poll(tick_rate).unwrap() {
                     if let event::Event::Key(key) = event::read().unwrap() {
                         if key.kind == KeyEventKind::Press {
@@ -25,15 +36,23 @@ impl EventHandler {
                         };
                     }
                 }
-                println!("I am still here");
+                } => {}
+                }
             }
         });
 
-        EventHandler { rx }
+        EventHandler {
+            rx,
+            stop_cancellation_token,
+        }
     }
 
     async fn next(&mut self) -> Option<KeyCode> {
         self.rx.recv().await
+    }
+
+    fn stop(&self) {
+        self.stop_cancellation_token.cancel();
     }
 }
 
@@ -50,7 +69,10 @@ impl App {
         loop {
             tui.terminal.draw(|f| ui(f, self))?;
             match events.next().await.unwrap() {
-                KeyCode::Char('q') => break,
+                KeyCode::Char('q') => {
+                    events.stop();
+                    break;
+                }
                 KeyCode::Right => self.left_size += 1,
                 KeyCode::Left => {
                     if self.left_size > 0 {
