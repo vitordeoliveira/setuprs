@@ -1,5 +1,9 @@
-use color_eyre::eyre::Result;
+use color_eyre::{eyre::Result, owo_colors::OwoColorize};
 use crossterm::event::{self, KeyCode, KeyEventKind};
+use ratatui::{
+    style::{palette::tailwind, Stylize},
+    widgets::ListItem,
+};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
@@ -13,6 +17,23 @@ struct EventHandler {
 #[derive(Debug, Default)]
 pub struct App {
     pub left_size: u16,
+    pub list: Vec<ObjList>,
+    pub current_item: String,
+}
+
+#[derive(Debug, Default)]
+pub struct ObjList {
+    pub id: String,
+    pub selected: bool,
+}
+
+impl ObjList {
+    pub fn to_list_item(&self, current_item: String) -> ListItem {
+        match self.id == current_item {
+            true => ListItem::new(self.id.to_string()).bg(tailwind::GREEN.c400),
+            false => ListItem::new(self.id.to_string()),
+        }
+    }
 }
 
 impl EventHandler {
@@ -59,7 +80,14 @@ impl EventHandler {
 #[allow(dead_code)]
 impl App {
     pub fn new() -> Result<Self> {
-        Ok(Self::default())
+        Ok(App {
+            list: vec![ObjList {
+                id: "10".to_string(),
+                selected: true,
+            }],
+            current_item: "10".to_string(),
+            left_size: 50,
+        })
     }
 
     pub async fn run(&mut self) -> Result<()> {
