@@ -2,9 +2,10 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::Stylize,
     text::{Line, Text},
-    widgets::Paragraph,
     Frame,
 };
+
+use ratatui::{prelude::*, widgets::*};
 
 use crate::tui::app::App;
 
@@ -22,8 +23,22 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         "Quit <Q>".into(),
     ]);
 
+    let items: Vec<ListItem> = state
+        .list
+        .iter()
+        .map(|i| i.to_list_item(state.current_item.clone()).clone())
+        .collect();
+    let list = List::new(items)
+        .block(Block::default().title("List").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White))
+        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
+        .highlight_symbol(">>")
+        .repeat_highlight_symbol(true);
+
+    f.render_widget(list, chunks[0]);
+
     // let block = Block::default().title(instructions);
-    f.render_widget(instructions, chunks[0]);
-    let text = format!("size: {}", state.left_size);
-    f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
+    f.render_widget(instructions, chunks[1]);
+    // let text = format!("size: {}", state.left_size);
+    // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
 }
