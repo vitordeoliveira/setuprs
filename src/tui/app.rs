@@ -28,6 +28,15 @@ pub struct ObjList {
 }
 
 impl ObjList {
+    pub fn from_array(arr: &[&str]) -> Vec<Self> {
+        arr.iter()
+            .map(|id| ObjList {
+                id: id.to_string(),
+                selected: false,
+            })
+            .collect()
+    }
+
     pub fn to_list_item(&self, current_item: String) -> ListItem {
         match self.id == current_item {
             true => ListItem::new(self.id.to_string()).bg(tailwind::GREEN.c400),
