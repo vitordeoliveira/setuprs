@@ -5,7 +5,7 @@ use color_eyre::eyre::Result;
 use setuprs::{
     cli::{Cli, Commands},
     copy_dir_all, search_file_create_config_folder_if_not_found,
-    tui::app::App,
+    tui::app::{App, ObjList},
     Config,
 };
 use uuid::Uuid;
@@ -64,7 +64,8 @@ async fn main() -> Result<()> {
         Some(Commands::Init {}) => {}
 
         None => {
-            let mut app = App::new()?;
+            let items = ObjList::from_array(&["1", "2", "3"]);
+            let mut app = App::new(items)?;
             app.run().await?;
         }
     };
