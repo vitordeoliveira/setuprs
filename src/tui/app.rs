@@ -113,5 +113,29 @@ impl App {
         Ok(())
     }
 
+    pub fn change_current_down(&mut self) {
+        // let current_position = self
+        //     .list
+        //     .iter()
+        //     .position(|item| item.id == self.current_item);
+        //
+        // match current_position.unwrap() == self.list.len() - 1 {
+        //     true => self.current_item = self.list[0].id.clone(),
+        //     false => self.current_item = self.list[1 + current_position.unwrap()].id.clone(),
+        // }
+        match self
+            .list
+            .iter()
+            .position(|item| item.id == self.current_item)
+        {
+            Some(current_position) if current_position == self.list.len() - 1 => {
+                self.current_item = self.list[0].id.clone()
+            }
+            Some(current_position) => {
+                self.current_item = self.list[1 + current_position].id.clone()
+            }
+            None => {}
+        }
     }
+
 }
