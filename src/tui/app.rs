@@ -79,13 +79,10 @@ impl EventHandler {
 
 #[allow(dead_code)]
 impl App {
-    pub fn new() -> Result<Self> {
+    pub fn new(list: Vec<ObjList>) -> Result<Self> {
         Ok(App {
-            list: vec![ObjList {
-                id: "10".to_string(),
-                selected: true,
-            }],
-            current_item: "10".to_string(),
+            current_item: list[0].id.clone(),
+            list,
             left_size: 50,
         })
     }
@@ -101,6 +98,7 @@ impl App {
                     events.stop();
                     break;
                 }
+                KeyCode::Down => self.change_current_down(),
                 KeyCode::Right => self.left_size += 1,
                 KeyCode::Left => {
                     if self.left_size > 0 {
