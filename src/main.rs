@@ -4,9 +4,11 @@ use clap::Parser;
 use color_eyre::eyre::Result;
 use setuprs::{
     cli::{Cli, Commands},
-    copy_dir_all, search_file_create_config_folder_if_not_found,
+    core::{
+        utils::{copy_dir_all, search_file_create_config_folder_if_not_found},
+        Config,
+    },
     tui::app::{App, ObjList},
-    Config,
 };
 use uuid::Uuid;
 mod tui;
@@ -61,13 +63,13 @@ async fn main() -> Result<()> {
             println!("{}", id);
         }
 
-        Some(Commands::Init {}) => {}
-
-        None => {
+        Some(Commands::Init {}) => {
             let items = ObjList::from_array(&["1", "2", "3"]);
             let mut app = App::new(items)?;
             app.run().await?;
         }
+
+        None => {}
     };
 
     Ok(())
@@ -78,7 +80,7 @@ mod tests {
     use std::{fs, str::FromStr};
 
     use assert_cmd::Command;
-    use setuprs::{search_file_create_config_folder_if_not_found, Config};
+    use setuprs::core::{utils::search_file_create_config_folder_if_not_found, Config};
     use uuid::Uuid;
 
     struct Noisy {
@@ -137,7 +139,6 @@ mod tests {
 
     impl Drop for Noisy {
         fn drop(&mut self) {
-            println!("DROP");
             if let Some((folder, _)) = &self.configuration {
                 let _ = fs::remove_dir_all(format!("./{}", folder));
             }
