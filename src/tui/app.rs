@@ -113,7 +113,5 @@ impl App {
         Ok(())
     }
 
-    async fn events() -> Result<()> {
-        Ok(())
     }
 }
