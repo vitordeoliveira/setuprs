@@ -108,6 +108,7 @@ impl App {
                     break;
                 }
                 KeyCode::Down => self.change_current_down(),
+                KeyCode::Up => self.change_current_up(),
                 KeyCode::Right => self.left_size += 1,
                 KeyCode::Left => {
                     if self.left_size > 0 {
@@ -147,4 +148,17 @@ impl App {
         }
     }
 
+    fn change_current_up(&mut self) {
+        match self
+            .list
+            .iter()
+            .position(|item| item.id == self.current_item)
+        {
+            Some(0) => self.current_item = self.list[self.list.len() - 1].id.clone(),
+            Some(current_position) => {
+                self.current_item = self.list[current_position - 1].id.clone()
+            }
+            None => {}
+        }
+    }
 }
