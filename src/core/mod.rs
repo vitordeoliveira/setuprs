@@ -1,4 +1,4 @@
-use std::{env, fmt::Display, str::FromStr};
+use std::{env, fmt::Display, fs, path::PathBuf, str::FromStr};
 
 use serde_derive::Deserialize;
 pub mod utils;
@@ -8,6 +8,25 @@ pub struct Config {
     pub config_file_path: String,
     pub debug_mode: String,
     pub snapshots_path: String,
+}
+
+impl Config {
+    pub fn new(config: &Option<PathBuf>) -> Self {
+        let config_path: PathBuf = match config {
+            Some(v) => v.clone(),
+            _ => PathBuf::from(Self::default().config_file_path),
+        };
+
+        if let Ok(contents) = fs::read_to_string(config_path) {
+            if let Ok(newconf) = toml::from_str::<Config>(&contents) {
+                newconf
+            } else {
+                Config::default()
+            }
+        } else {
+            Config::default()
+        }
+    }
 }
 
 impl Default for Config {

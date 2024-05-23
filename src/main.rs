@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::fs;
 
 use clap::Parser;
 use color_eyre::eyre::Result;
@@ -19,33 +19,21 @@ mod tui;
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let default_config = Config::default();
+    let config = Config::new(&cli.config);
 
-    let config_path: PathBuf = match &cli.config {
-        Some(v) => v.clone(),
-        _ => PathBuf::from(&default_config.config_file_path),
-    };
-
-    let current_config = {
-        let contents = fs::read_to_string(&config_path)?;
-        toml::from_str::<Config>(&contents)?
-    };
-
-    if let Ok(config_str) = config_path.clone().into_os_string().into_string() {
-        match search_file_create_config_folder_if_not_found(&config_str, &default_config) {
-            Ok(path) => {
-                if !path.is_empty() {
-                    println!("{}", path);
-                }
+    match search_file_create_config_folder_if_not_found(&config.config_file_path, &config) {
+        Ok(path) => {
+            if !path.is_empty() {
+                println!("{}", path);
             }
-            Err(err) => {
-                eprintln!("Error: {}", err);
-            }
+        }
+        Err(err) => {
+            eprintln!("Error: {}", err);
         }
     }
 
     if cli.current_config {
-        println!("{current_config}");
+        println!("{config}");
     }
 
     match &cli.command {
@@ -57,7 +45,7 @@ async fn main() -> Result<()> {
 
             copy_dir_all(
                 dir,
-                format!("{}/{}", &current_config.snapshots_path, id),
+                format!("{}/{}", &config.snapshots_path, id),
                 id.to_string(),
             )?;
 
@@ -65,7 +53,7 @@ async fn main() -> Result<()> {
         }
 
         Some(Commands::Init {}) => {
-            let items_ids = get_all_snapshot_ids(&current_config.snapshots_path)?;
+            let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
             let mut app = App::new(items)?;
             app.run().await?;
