@@ -44,6 +44,24 @@ pub fn search_file_create_config_folder_if_not_found(
     Ok(response)
 }
 
+pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
+    let mut result: Vec<String> = vec![];
+    if let Ok(entries) = fs::read_dir(src) {
+        entries.for_each(|entry| {
+            if let Ok(entry) = entry {
+                if let Some(filename_str) = entry
+                    .path()
+                    .file_name()
+                    .and_then(|filename| filename.to_str())
+                {
+                    result.push(filename_str.to_string())
+                }
+            }
+        });
+    }
+    Ok(result)
+}
+
 pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {
     fs::create_dir_all(&dst)?;
     for entry in fs::read_dir(src)? {
@@ -128,4 +146,13 @@ fn should_copy_folder_recurcivilly() {
     );
 
     let _ = fs::remove_dir_all("./test_folder_copy");
+}
+
+#[test]
+fn should_retrieve_id() {
+    let Noisy { folder, file } = &Noisy::new();
+
+    let result = get_all_snapshot_ids(folder).unwrap();
+    let expected = vec![format!("{file}")];
+    assert_eq!(result, expected);
 }
