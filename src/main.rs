@@ -26,6 +26,11 @@ async fn main() -> Result<()> {
         _ => PathBuf::from(&default_config.config_file_path),
     };
 
+    let current_config = {
+        let contents = fs::read_to_string(&config_path)?;
+        toml::from_str::<Config>(&contents)?
+    };
+
     if let Ok(config_str) = config_path.clone().into_os_string().into_string() {
         match search_file_create_config_folder_if_not_found(&config_str, &default_config) {
             Ok(path) => {
@@ -40,16 +45,11 @@ async fn main() -> Result<()> {
     }
 
     if cli.current_config {
-        let contents = fs::read_to_string(&config_path)?;
-        let data = toml::from_str::<Config>(&contents)?;
-        println!("{data}");
+        println!("{current_config}");
     }
 
     match &cli.command {
         Some(Commands::Snapshot { dir, tag }) => {
-            let contents = fs::read_to_string(&config_path)?;
-            let data: Config = toml::from_str(&contents)?;
-
             let id = match tag {
                 Some(tag_value) => tag_value.to_string(),
                 None => Uuid::new_v4().to_string(),
@@ -57,7 +57,7 @@ async fn main() -> Result<()> {
 
             copy_dir_all(
                 dir,
-                format!("{}/{}", data.snapshots_path, id),
+                format!("{}/{}", &current_config.snapshots_path, id),
                 id.to_string(),
             )?;
 
@@ -65,9 +65,7 @@ async fn main() -> Result<()> {
         }
 
         Some(Commands::Init {}) => {
-            let contents = fs::read_to_string(&config_path)?;
-            let data = toml::from_str::<Config>(&contents)?;
-            let items_ids = get_all_snapshot_ids(data.snapshots_path)?;
+            let items_ids = get_all_snapshot_ids(&current_config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
             let mut app = App::new(items)?;
             app.run().await?;
