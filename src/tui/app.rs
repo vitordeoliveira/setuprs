@@ -28,7 +28,7 @@ pub struct ObjList {
 }
 
 impl ObjList {
-    pub fn from_array(arr: &[&str]) -> Vec<Self> {
+    pub fn from_array(arr: Vec<String>) -> Vec<Self> {
         arr.iter()
             .map(|id| ObjList {
                 id: id.to_string(),
