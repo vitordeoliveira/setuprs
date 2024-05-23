@@ -313,8 +313,7 @@ mod tests {
     //         .get_output()
     //         .clone();
     //
-    //     let binding = String::from_utf8(output.stdout).unwrap();
-    //     let snapshot_file = binding.lines().next().expect("No line found").to_string();
+    //     let binding = String::from_utf8(output.stdout).unwrap(); let snapshot_file = binding.lines().next().expect("No line found").to_string();
     //
     //     let expected = format!("Created file: ./{folder}/{file}");
     //     assert_eq!(snapshot_file, expected);
