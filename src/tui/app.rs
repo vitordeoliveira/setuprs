@@ -1,4 +1,4 @@
-use color_eyre::{eyre::Result, owo_colors::OwoColorize};
+use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{
     style::{palette::tailwind, Stylize},
@@ -28,6 +28,7 @@ pub struct ObjList {
 }
 
 impl ObjList {
+    #[allow(dead_code)]
     pub fn from_array(arr: Vec<String>) -> Vec<Self> {
         arr.iter()
             .map(|id| ObjList {
