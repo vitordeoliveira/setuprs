@@ -1,5 +1,3 @@
-use std::fs;
-
 use clap::Parser;
 use color_eyre::eyre::Result;
 use setuprs::{
@@ -90,17 +88,17 @@ mod tests {
             self.cleanup = Some(Box::new(closure));
         }
 
-        fn set_configuration_folder_without_create(mut self) -> Self {
-            if self.configuration.is_none() {
-                let (folder, file) = (
-                    Uuid::new_v4().to_string(),
-                    format!("{}.toml", Uuid::new_v4()),
-                );
-
-                self.configuration = Some((folder, file));
-            }
-            self
-        }
+        // fn set_configuration_folder_without_create(mut self) -> Self {
+        //     if self.configuration.is_none() {
+        //         let (folder, file) = (
+        //             Uuid::new_v4().to_string(),
+        //             format!("{}.toml", Uuid::new_v4()),
+        //         );
+        //
+        //         self.configuration = Some((folder, file));
+        //     }
+        //     self
+        // }
 
         fn set_configuration_folder(mut self) -> Self {
             if self.configuration.is_none() {
