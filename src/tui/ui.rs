@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    style::Stylize,
+    style::{palette::tailwind, Stylize},
     text::{Line, Text},
     Frame,
 };
@@ -17,11 +17,16 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         .constraints([Constraint::Percentage(state.left_size), Constraint::Min(1)])
         .split(f.size());
 
-    let instructions = Text::from(vec![
-        Line::from(vec!["Decrement Menu Size".into(), "<Left>".blue().bold()]),
+    let content = Block::default().borders(Borders::ALL);
+    let help_instructions = Paragraph::new(vec![
+        Line::from(vec![
+            "Select the setup you want".into(),
+            "<UP> or <DOWN>".blue().bold(),
+        ]),
         Line::from(vec!["Increment Menu Size".into(), "<Right>".blue().bold()]),
         "Quit <Q>".into(),
-    ]);
+    ])
+    .block(content);
 
     let items: Vec<ListItem> = state
         .list
@@ -33,14 +38,13 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     let list = List::new(items)
         .block(Block::default().title("List").borders(Borders::ALL))
         .style(Style::default().fg(Color::White))
-        .highlight_style(Style::default().add_modifier(Modifier::ITALIC))
-        .highlight_symbol(">>")
-        .repeat_highlight_symbol(true);
+        .highlight_style(Style::default().bg(tailwind::GREEN.c400))
+        .highlight_spacing(HighlightSpacing::Always);
 
     f.render_stateful_widget(list, chunks[0], &mut state.list_state);
 
     // let block = Block::default().title(instructions);
-    f.render_widget(instructions, chunks[1]);
+    f.render_widget(help_instructions, chunks[1]);
     // let text = format!("size: {}", state.left_size);
     // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
 }
