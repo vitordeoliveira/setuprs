@@ -95,7 +95,7 @@ impl App {
     pub fn new(list: Vec<ObjList>) -> Result<Self> {
         Ok(App {
             // current_item: list[0].id.clone(),
-            list_state: ListState::default(),
+            list_state: ListState::default().with_selected(Some(0)),
             list,
             left_size: 50,
             last_selected: None,
@@ -113,8 +113,8 @@ impl App {
                     events.stop();
                     break;
                 }
-                KeyCode::Down => self.change_current_down(),
-                // KeyCode::Up => self.change_current_up(),
+                KeyCode::Down => self.next(),
+                KeyCode::Up => self.previous(),
                 KeyCode::Right => self.left_size += 1,
                 KeyCode::Left => {
                     if self.left_size > 0 {
@@ -129,7 +129,7 @@ impl App {
         Ok(())
     }
 
-    pub fn change_current_down(&mut self) {
+    pub fn next(&mut self) {
         // let current_position = self
         //     .list
         //     .iter()
@@ -165,17 +165,28 @@ impl App {
         self.list_state.select(Some(i));
     }
 
-    // fn change_current_up(&mut self) {
-    //     match self
-    //         .list
-    //         .iter()
-    //         .position(|item| item.id == self.current_item)
-    //     {
-    //         Some(0) => self.current_item = self.list[self.list.len() - 1].id.clone(),
-    //         Some(current_position) => {
-    //             self.current_item = self.list[current_position - 1].id.clone()
-    //         }
-    //         None => {}
-    //     }
-    // }
+    fn previous(&mut self) {
+        // match self
+        //     .list
+        //     .iter()
+        //     .position(|item| item.id == self.current_item)
+        // {
+        //     Some(0) => self.current_item = self.list[self.list.len() - 1].id.clone(),
+        //     Some(current_position) => {
+        //         self.current_item = self.list[current_position - 1].id.clone()
+        //     }
+        //     None => {}
+        // }
+        let i = match self.list_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.list.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => self.last_selected.unwrap_or(0),
+        };
+        self.list_state.select(Some(i));
+    }
 }
