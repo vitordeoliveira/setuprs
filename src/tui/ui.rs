@@ -26,8 +26,10 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     let items: Vec<ListItem> = state
         .list
         .iter()
-        .map(|i| i.to_list_item(state.current_item.clone()).clone())
+        .enumerate()
+        .map(|(i, item)| item.to_list_item(i))
         .collect();
+
     let list = List::new(items)
         .block(Block::default().title("List").borders(Borders::ALL))
         .style(Style::default().fg(Color::White))
@@ -35,7 +37,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         .highlight_symbol(">>")
         .repeat_highlight_symbol(true);
 
-    f.render_widget(list, chunks[0]);
+    f.render_stateful_widget(list, chunks[0], &mut state.list_state);
 
     // let block = Block::default().title(instructions);
     f.render_widget(instructions, chunks[1]);

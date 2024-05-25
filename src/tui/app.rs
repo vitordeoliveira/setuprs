@@ -2,7 +2,7 @@ use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::{
     style::{palette::tailwind, Stylize},
-    widgets::ListItem,
+    widgets::{ListItem, ListState},
 };
 use tokio::select;
 use tokio_util::sync::CancellationToken;
@@ -18,7 +18,9 @@ struct EventHandler {
 pub struct App {
     pub left_size: u16,
     pub list: Vec<ObjList>,
-    pub current_item: String,
+    // pub current_item: String,
+    pub list_state: ListState,
+    pub last_selected: Option<usize>,
 }
 
 #[derive(Debug, Default)]
@@ -38,11 +40,12 @@ impl ObjList {
             .collect()
     }
 
-    pub fn to_list_item(&self, current_item: String) -> ListItem {
-        match self.id == current_item {
-            true => ListItem::new(self.id.to_string()).bg(tailwind::GREEN.c400),
-            false => ListItem::new(self.id.to_string()),
-        }
+    pub fn to_list_item(&self, current_item: usize) -> ListItem {
+        // match self.id == current_item {
+        //     true => ListItem::new(self.id.to_string()).bg(tailwind::GREEN.c400),
+        //     false => ListItem::new(self.id.to_string()),
+        // }
+        ListItem::new(self.id.to_string())
     }
 }
 
@@ -91,9 +94,11 @@ impl EventHandler {
 impl App {
     pub fn new(list: Vec<ObjList>) -> Result<Self> {
         Ok(App {
-            current_item: list[0].id.clone(),
+            // current_item: list[0].id.clone(),
+            list_state: ListState::default(),
             list,
             left_size: 50,
+            last_selected: None,
         })
     }
 
@@ -109,7 +114,7 @@ impl App {
                     break;
                 }
                 KeyCode::Down => self.change_current_down(),
-                KeyCode::Up => self.change_current_up(),
+                // KeyCode::Up => self.change_current_up(),
                 KeyCode::Right => self.left_size += 1,
                 KeyCode::Left => {
                     if self.left_size > 0 {
@@ -134,32 +139,43 @@ impl App {
         //     true => self.current_item = self.list[0].id.clone(),
         //     false => self.current_item = self.list[1 + current_position.unwrap()].id.clone(),
         // }
-        match self
-            .list
-            .iter()
-            .position(|item| item.id == self.current_item)
-        {
-            Some(current_position) if current_position == self.list.len() - 1 => {
-                self.current_item = self.list[0].id.clone()
+        // match self
+        //     .list
+        //     .iter()
+        //     .position(|item| item.id == self.current_item)
+        // {
+        //     Some(current_position) if current_position == self.list.len() - 1 => {
+        //         self.current_item = self.list[0].id.clone()
+        //     }
+        //     Some(current_position) => {
+        //         self.current_item = self.list[1 + current_position].id.clone()
+        //     }
+        //     None => {}
+        // }
+        let i = match self.list_state.selected() {
+            Some(i) => {
+                if i >= self.list.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
             }
-            Some(current_position) => {
-                self.current_item = self.list[1 + current_position].id.clone()
-            }
-            None => {}
-        }
+            None => self.last_selected.unwrap_or(0),
+        };
+        self.list_state.select(Some(i));
     }
 
-    fn change_current_up(&mut self) {
-        match self
-            .list
-            .iter()
-            .position(|item| item.id == self.current_item)
-        {
-            Some(0) => self.current_item = self.list[self.list.len() - 1].id.clone(),
-            Some(current_position) => {
-                self.current_item = self.list[current_position - 1].id.clone()
-            }
-            None => {}
-        }
-    }
+    // fn change_current_up(&mut self) {
+    //     match self
+    //         .list
+    //         .iter()
+    //         .position(|item| item.id == self.current_item)
+    //     {
+    //         Some(0) => self.current_item = self.list[self.list.len() - 1].id.clone(),
+    //         Some(current_position) => {
+    //             self.current_item = self.list[current_position - 1].id.clone()
+    //         }
+    //         None => {}
+    //     }
+    // }
 }
