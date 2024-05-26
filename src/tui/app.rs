@@ -1,9 +1,6 @@
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
-use ratatui::{
-    style::{palette::tailwind, Stylize},
-    widgets::{ListItem, ListState},
-};
+use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
