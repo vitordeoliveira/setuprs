@@ -4,6 +4,8 @@ use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
+use crate::core::{utils::confirm_selection, Config};
+
 use super::{ui::ui, Tui};
 
 struct EventHandler {
@@ -13,6 +15,7 @@ struct EventHandler {
 
 #[derive(Debug, Default)]
 pub struct App {
+    pub current_config: Config,
     pub left_size: u16,
     pub list: Vec<ObjList>,
     // pub current_item: String,
@@ -89,9 +92,10 @@ impl EventHandler {
 
 #[allow(dead_code)]
 impl App {
-    pub fn new(list: Vec<ObjList>) -> Result<Self> {
+    pub fn new(list: Vec<ObjList>, current_config: Config) -> Result<Self> {
         Ok(App {
             // current_item: list[0].id.clone(),
+            current_config,
             list_state: ListState::default().with_selected(Some(0)),
             list,
             left_size: 50,
@@ -110,6 +114,7 @@ impl App {
                     events.stop();
                     break;
                 }
+                KeyCode::Enter => confirm_selection(),
                 KeyCode::Down => self.next(),
                 KeyCode::Up => self.previous(),
                 KeyCode::Right => self.left_size += 1,

@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    env, fs,
     io::{self, Write},
     path::Path,
 };
@@ -42,6 +42,12 @@ pub fn search_file_create_config_folder_if_not_found(
     }
 
     Ok(response)
+}
+
+pub fn confirm_selection() {
+    //TODO:get id, find snapshot, copy all to the current path
+    let current_path = env::current_dir();
+    println!("{}", current_path.unwrap().display());
 }
 
 pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
