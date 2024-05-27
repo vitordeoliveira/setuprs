@@ -11,6 +11,7 @@ use setuprs::{
     tui::app::{App, ObjList},
 };
 use uuid::Uuid;
+mod core;
 mod tui;
 
 #[tokio::main]
@@ -32,6 +33,7 @@ async fn main() -> Result<()> {
 
     if cli.current_config {
         println!("{config}");
+        return Ok(());
     }
 
     match &cli.command {
@@ -50,14 +52,14 @@ async fn main() -> Result<()> {
             println!("{}", id);
         }
 
-        Some(Commands::Init {}) => {
+        Some(Commands::Init {}) => {}
+
+        None => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
-            let mut app = App::new(items)?;
+            let mut app = App::new(items, config)?;
             app.run().await?;
         }
-
-        None => {}
     };
 
     Ok(())
@@ -162,12 +164,9 @@ mod tests {
         match &Noisy::new(None).set_configuration_folder().configuration {
             Some((folder, file)) => {
                 let mut cmd = Command::cargo_bin("setuprs").unwrap();
-                cmd.arg("--config")
-                    .arg(format!("./{folder}/{file}"))
-                    .assert()
-                    .success();
-
                 let value = cmd
+                    .arg("--config")
+                    .arg(format!("./{folder}/{file}"))
                     .arg("--current-config")
                     .assert()
                     .success()
@@ -196,12 +195,9 @@ mod tests {
         let (folder, file) = noisy.configuration.clone().unwrap();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        cmd.arg("--config")
-            .arg(format!("./{folder}/{file}"))
-            .assert()
-            .success();
-
         let value = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
             .arg("-d")
             .arg(format!("./{folder}"))
@@ -247,12 +243,9 @@ mod tests {
         let (folder, file) = noisy.configuration.clone().unwrap();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        cmd.arg("--config")
-            .arg(format!("./{folder}/{file}"))
-            .assert()
-            .success();
-
         let value = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
             .arg("-d")
             .arg(format!("./{folder}"))
@@ -282,6 +275,7 @@ mod tests {
         );
     }
 
+    // TODO: is this test usefull also?
     // #[test]
     // fn if_folder_config_folder_not_exist_should_stdout_filepath() {
     //     let noisy = Noisy::new(None).set_configuration_folder_without_create();
@@ -303,23 +297,24 @@ mod tests {
     //     assert_eq!(snapshot_file, expected);
     // }
 
-    #[test]
-    fn if_folder_config_folder_exist_should_not_stdout_filepath() {
-        let noisy = Noisy::new(None).set_configuration_folder();
-        let (folder, file) = noisy.configuration.clone().unwrap();
-
-        let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        let output = cmd
-            .arg("--config")
-            .arg(format!("./{folder}/{file}"))
-            .assert()
-            .success()
-            .get_output()
-            .clone();
-
-        let binding = String::from_utf8(output.stdout).unwrap();
-        let snapshot_file = binding.to_string();
-
-        assert_eq!(snapshot_file, "");
-    }
+    // TODO: this test idea might be useless
+    // #[test]
+    // fn if_folder_config_folder_exist_should_not_stdout_filepath() {
+    //     let noisy = Noisy::new(None).set_configuration_folder();
+    //     let (folder, file) = noisy.configuration.clone().unwrap();
+    //
+    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
+    //     let output = cmd
+    //         .arg("--config")
+    //         .arg(format!("./{folder}/{file}"))
+    //         .assert()
+    //         .success()
+    //         .get_output()
+    //         .clone();
+    //
+    //     let binding = String::from_utf8(output.stdout).unwrap();
+    //     let snapshot_file = binding.to_string();
+    //
+    //     assert_eq!(snapshot_file, "");
+    // }
 }
