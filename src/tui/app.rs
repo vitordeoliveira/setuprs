@@ -1,10 +1,15 @@
+use std::{env, fmt::format};
+
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
-use crate::core::{utils::confirm_selection, Config};
+use crate::core::{
+    utils::{confirm_selection, copy_dir_all},
+    Config,
+};
 
 use super::{ui::ui, Tui};
 
@@ -114,7 +119,21 @@ impl App {
                     events.stop();
                     break;
                 }
-                KeyCode::Enter => confirm_selection(),
+                KeyCode::Enter => {
+                    if let (Ok(path), Some(selected_snapshot)) =
+                        (env::current_dir(), self.get_selected())
+                    {
+                        let snapshot_path = format!(
+                            "{}{}",
+                            self.current_config.snapshots_path, selected_snapshot.id
+                        );
+
+                        match copy_dir_all(snapshot_path, path) {
+                            Ok(_) => println!("copy works"),
+                            Err(_) => println!("error"),
+                        };
+                    }
+                }
                 KeyCode::Down => self.next(),
                 KeyCode::Up => self.previous(),
                 KeyCode::Right => self.left_size += 1,
@@ -190,5 +209,10 @@ impl App {
             None => self.last_selected.unwrap_or(0),
         };
         self.list_state.select(Some(i));
+    }
+
+    fn get_selected(&self) -> Option<&ObjList> {
+        let index = self.list_state.selected()?;
+        self.list.get(index)
     }
 }

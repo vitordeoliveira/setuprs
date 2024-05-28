@@ -43,11 +43,7 @@ async fn main() -> Result<()> {
                 None => Uuid::new_v4().to_string(),
             };
 
-            copy_dir_all(
-                dir,
-                format!("{}/{}", &config.snapshots_path, id),
-                id.to_string(),
-            )?;
+            copy_dir_all(dir, format!("{}/{}", &config.snapshots_path, id))?;
 
             println!("{}", id);
         }
