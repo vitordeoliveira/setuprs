@@ -68,25 +68,18 @@ pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
     Ok(result)
 }
 
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, id: String) -> io::Result<()> {
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     fs::create_dir_all(&dst)?;
     for entry in fs::read_dir(src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
 
-        if entry.file_name() == ".git"
-            || entry.file_name() == "snapshots"
-            || *entry.file_name() == *id
-        {
+        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
             continue;
         }
 
         if ty.is_dir() {
-            copy_dir_all(
-                entry.path(),
-                dst.as_ref().join(entry.file_name()),
-                id.clone(),
-            )?;
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
         } else {
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
         }
@@ -143,7 +136,7 @@ fn should_create_folder_and_file() {
 #[test]
 fn should_copy_folder_recurcivilly() {
     let Noisy { folder, file } = &Noisy::new();
-    copy_dir_all(folder, "./test_folder_copy", "test_id".to_string()).unwrap();
+    copy_dir_all(folder, "./test_folder_copy").unwrap();
 
     let file: String = fs::read_to_string(format!("./test_folder_copy/{file}")).unwrap();
     assert_eq!(
