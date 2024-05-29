@@ -59,4 +59,11 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     // let text = format!("size: {}", state.left_size);
     // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
 
+    if state.left_size > 50 {
+        let block = Block::bordered().title("Popup");
+        let area = centered_rect(60, 20, f.size());
+
+        f.render_widget(Clear, area);
+        f.render_widget(block, area);
+    }
 }
