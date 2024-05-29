@@ -15,7 +15,6 @@ struct EventHandler {
     stop_cancellation_token: CancellationToken,
 }
 
-// TODO: create pages enum.
 // TODO: setuprs config file, to user pass variables before the app creation
 // TODO: with dyn vars from user every place where %VAR% should replace with the variables
 #[derive(Debug, Default)]
@@ -23,9 +22,27 @@ pub struct App {
     pub current_config: Config,
     pub left_size: u16,
     pub list: Vec<ObjList>,
-    // pub current_item: String,
     pub list_state: ListState,
     pub last_selected: Option<usize>,
+    pub mode: CurrentMode,
+}
+
+#[derive(Debug)]
+pub enum Content {
+    Help,
+}
+
+#[derive(Debug)]
+pub enum CurrentMode {
+    Main(Content),
+    Confirming,
+    Exiting,
+}
+
+impl Default for CurrentMode {
+    fn default() -> Self {
+        CurrentMode::Main(Content::Help)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -99,12 +116,11 @@ impl EventHandler {
 impl App {
     pub fn new(list: Vec<ObjList>, current_config: Config) -> Result<Self> {
         Ok(App {
-            // current_item: list[0].id.clone(),
             current_config,
             list_state: ListState::default().with_selected(Some(0)),
             list,
             left_size: 50,
-            last_selected: None,
+            ..App::default()
         })
     }
 
@@ -114,42 +130,57 @@ impl App {
         let mut events = EventHandler::new();
         loop {
             tui.terminal.draw(|f| ui(f, self))?;
-            match events.next().await.unwrap() {
-                KeyCode::Char('q') => {
-                    events.stop();
-                    break;
-                }
-                KeyCode::Enter => {
-                    // TODO: Create popup asking the name of the folder where the copy will be "."
-                    // if no folder is needed, (default) is the snapshot tag name or id or
-                    // setupr.toml default name
-                    if let (Ok(path), Some(selected_snapshot)) =
-                        (env::current_dir(), self.get_selected())
-                    {
-                        let snapshot_path = format!(
-                            "{}{}",
-                            self.current_config.snapshots_path, selected_snapshot.id
-                        );
 
-                        match copy_dir_all(snapshot_path, path) {
-                            Ok(_) => {
+            if let Some(keycode) = events.next().await {
+                match self.mode {
+                    CurrentMode::Main(_) => {
+                        match keycode {
+                            KeyCode::Char('e') => self.mode = CurrentMode::Exiting,
+                            KeyCode::Char('q') => {
                                 events.stop();
                                 break;
                             }
-                            // TODO: when error, show error popup and reset to initial state
-                            Err(_) => println!("error"),
-                        };
+                            KeyCode::Enter => {
+                                // TODO: Create popup asking the name of the folder where the copy will be "."
+                                // if no folder is needed, (default) is the snapshot tag name or id or
+                                // setupr.toml default name
+                                if let (Ok(path), Some(selected_snapshot)) =
+                                    (env::current_dir(), self.get_selected())
+                                {
+                                    let snapshot_path = format!(
+                                        "{}{}",
+                                        self.current_config.snapshots_path, selected_snapshot.id
+                                    );
+
+                                    match copy_dir_all(snapshot_path, path) {
+                                        Ok(_) => {
+                                            events.stop();
+                                            break;
+                                        }
+                                        // TODO: when error, show error popup and reset to initial state
+                                        Err(_) => println!("error"),
+                                    };
+                                }
+                            }
+                            KeyCode::Down => self.next(),
+                            KeyCode::Up => self.previous(),
+                            KeyCode::Right => self.left_size += 1,
+                            KeyCode::Left => {
+                                if self.left_size > 0 {
+                                    self.left_size -= 1
+                                }
+                            }
+                            _ => {}
+                        }
                     }
-                }
-                KeyCode::Down => self.next(),
-                KeyCode::Up => self.previous(),
-                KeyCode::Right => self.left_size += 1,
-                KeyCode::Left => {
-                    if self.left_size > 0 {
-                        self.left_size -= 1
+                    CurrentMode::Confirming => {}
+                    CurrentMode::Exiting => {
+                        if let KeyCode::Char('q') = keycode {
+                            events.stop();
+                            break;
+                        }
                     }
-                }
-                _ => {}
+                };
             }
         }
 
