@@ -9,7 +9,6 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::tui::app::App;
 
-#[allow(dead_code)]
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::vertical([
         Constraint::Percentage((100 - percent_y) / 2),
