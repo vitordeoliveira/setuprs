@@ -11,8 +11,6 @@ use setuprs::{
     tui::app::{App, ObjList},
 };
 use uuid::Uuid;
-mod core;
-mod tui;
 
 #[tokio::main]
 async fn main() -> Result<()> {
