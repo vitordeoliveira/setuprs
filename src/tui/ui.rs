@@ -44,11 +44,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     ])
     .block(content);
 
-        .list
-        .iter()
-        .enumerate()
-        .map(|(i, item)| item.to_list_item(i))
-        .collect();
+    let items: Vec<ListItem> = state.list.iter().map(|item| item.to_list_item()).collect();
 
     let list = List::new(items)
         .block(Block::default().title("List").borders(Borders::ALL))
@@ -62,4 +58,5 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     f.render_widget(help_instructions, chunks[1]);
     // let text = format!("size: {}", state.left_size);
     // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
+
 }
