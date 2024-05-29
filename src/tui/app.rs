@@ -1,4 +1,4 @@
-use std::{env, fmt::format};
+use std::env;
 
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
@@ -6,10 +6,7 @@ use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
-use crate::core::{
-    utils::{confirm_selection, copy_dir_all},
-    Config,
-};
+use crate::core::{utils::copy_dir_all, Config};
 
 use super::{ui::ui, Tui};
 
@@ -18,6 +15,9 @@ struct EventHandler {
     stop_cancellation_token: CancellationToken,
 }
 
+// TODO: create pages enum.
+// TODO: setuprs config file, to user pass variables before the app creation
+// TODO: with dyn vars from user every place where %VAR% should replace with the variables
 #[derive(Debug, Default)]
 pub struct App {
     pub current_config: Config,
@@ -45,7 +45,7 @@ impl ObjList {
             .collect()
     }
 
-    pub fn to_list_item(&self, current_item: usize) -> ListItem {
+    pub fn to_list_item(&self) -> ListItem {
         // match self.id == current_item {
         //     true => ListItem::new(self.id.to_string()).bg(tailwind::GREEN.c400),
         //     false => ListItem::new(self.id.to_string()),
@@ -120,6 +120,9 @@ impl App {
                     break;
                 }
                 KeyCode::Enter => {
+                    // TODO: Create popup asking the name of the folder where the copy will be "."
+                    // if no folder is needed, (default) is the snapshot tag name or id or
+                    // setupr.toml default name
                     if let (Ok(path), Some(selected_snapshot)) =
                         (env::current_dir(), self.get_selected())
                     {
@@ -129,7 +132,11 @@ impl App {
                         );
 
                         match copy_dir_all(snapshot_path, path) {
-                            Ok(_) => println!("copy works"),
+                            Ok(_) => {
+                                events.stop();
+                                break;
+                            }
+                            // TODO: when error, show error popup and reset to initial state
                             Err(_) => println!("error"),
                         };
                     }
