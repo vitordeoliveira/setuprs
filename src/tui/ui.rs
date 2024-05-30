@@ -9,6 +9,8 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::tui::app::App;
 
+use super::app::CurrentMode;
+
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     let popup_layout = Layout::vertical([
         Constraint::Percentage((100 - percent_y) / 2),
@@ -59,9 +61,17 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     // let text = format!("size: {}", state.left_size);
     // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
 
+    if let CurrentMode::Exiting = state.mode {
+        let block = Block::bordered().title("Are you sure?");
+        let area = centered_rect(60, 60, f.size());
+
+        f.render_widget(Clear, area);
+        f.render_widget(block, area);
+    };
+
     if state.left_size > 50 {
         let block = Block::bordered().title("Popup");
-        let area = centered_rect(60, 20, f.size());
+        let area = centered_rect(60, 60, f.size());
 
         f.render_widget(Clear, area);
         f.render_widget(block, area);
