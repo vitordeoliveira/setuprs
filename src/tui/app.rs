@@ -154,11 +154,11 @@ impl App {
                     CurrentMode::Main(_) => Action(Some(Main::actions(self, keycode))),
                     CurrentMode::Confirming => Action(None),
                     CurrentMode::Exiting => match keycode {
-                        KeyCode::Char('y') => {
+                        KeyCode::Char('y') | KeyCode::Char('Y') => {
                             events.stop();
                             break;
                         }
-                        KeyCode::Esc | KeyCode::Char('n') => {
+                        KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
                             self.mode = CurrentMode::Main(Content::Help);
                             Action(None)
                         }
