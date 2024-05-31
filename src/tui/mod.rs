@@ -7,8 +7,8 @@ use crossterm::{
 use ratatui::backend::CrosstermBackend as Backend;
 
 pub mod app;
+mod modes;
 pub mod ui;
-
 #[allow(dead_code)]
 pub struct Tui {
     pub terminal: ratatui::Terminal<Backend<std::io::Stderr>>,
