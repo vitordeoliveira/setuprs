@@ -55,11 +55,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         .highlight_spacing(HighlightSpacing::Always);
 
     f.render_stateful_widget(list, chunks[0], &mut state.list_state);
-
-    // let block = Block::default().title(instructions);
     f.render_widget(help_instructions, chunks[1]);
-    // let text = format!("size: {}", state.left_size);
-    // f.render_widget(Paragraph::new(text).white().on_blue(), chunks[1]);
 
     if let CurrentMode::Exiting = state.mode {
         let block = Block::bordered().title("Are you sure?");
