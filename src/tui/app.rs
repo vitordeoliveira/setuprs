@@ -1,18 +1,36 @@
-use std::env;
-
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
-use crate::core::{utils::copy_dir_all, Config};
+use crate::core::Config;
 
-use super::{ui::ui, Tui};
+use super::{modes::main::Main, ui::ui, Tui};
 
-struct EventHandler {
+pub struct EventHandler {
     rx: tokio::sync::mpsc::UnboundedReceiver<KeyCode>,
     stop_cancellation_token: CancellationToken,
+}
+
+pub trait Exit {
+    fn exit(&mut self) {
+        if let KeyCode::Char('q') = self.keycode() {
+            self.state().mode = CurrentMode::Exiting;
+        }
+    }
+    fn keycode(&self) -> KeyCode;
+    fn state(&mut self) -> &mut App;
+}
+
+struct Action<T: Exit>(Option<T>);
+
+impl<T: Exit> Action<T> {
+    fn run(&mut self) {
+        if let Some(ref mut e) = self.0 {
+            e.exit();
+        }
+    }
 }
 
 // TODO: setuprs config file, to user pass variables before the app creation
@@ -107,7 +125,7 @@ impl EventHandler {
         self.rx.recv().await
     }
 
-    fn stop(&self) {
+    pub fn stop(&self) {
         self.stop_cancellation_token.cancel();
     }
 }
@@ -132,55 +150,23 @@ impl App {
             tui.terminal.draw(|f| ui(f, self))?;
 
             if let Some(keycode) = events.next().await {
-                match self.mode {
-                    CurrentMode::Main(_) => {
-                        match keycode {
-                            KeyCode::Char('e') => self.mode = CurrentMode::Exiting,
-                            KeyCode::Char('q') => {
-                                events.stop();
-                                break;
-                            }
-                            KeyCode::Enter => {
-                                // TODO: Create popup asking the name of the folder where the copy will be "."
-                                // if no folder is needed, (default) is the snapshot tag name or id or
-                                // setupr.toml default name
-                                if let (Ok(path), Some(selected_snapshot)) =
-                                    (env::current_dir(), self.get_selected())
-                                {
-                                    let snapshot_path = format!(
-                                        "{}{}",
-                                        self.current_config.snapshots_path, selected_snapshot.id
-                                    );
-
-                                    match copy_dir_all(snapshot_path, path) {
-                                        Ok(_) => {
-                                            events.stop();
-                                            break;
-                                        }
-                                        // TODO: when error, show error popup and reset to initial state
-                                        Err(_) => println!("error"),
-                                    };
-                                }
-                            }
-                            KeyCode::Down => self.next(),
-                            KeyCode::Up => self.previous(),
-                            KeyCode::Right => self.left_size += 1,
-                            KeyCode::Left => {
-                                if self.left_size > 0 {
-                                    self.left_size -= 1
-                                }
-                            }
-                            _ => {}
-                        }
-                    }
-                    CurrentMode::Confirming => {}
-                    CurrentMode::Exiting => {
-                        if let KeyCode::Char('q') = keycode {
+                let mut action: Action<_> = match self.mode {
+                    CurrentMode::Main(_) => Action(Some(Main::actions(self, keycode))),
+                    CurrentMode::Confirming => Action(None),
+                    CurrentMode::Exiting => match keycode {
+                        KeyCode::Char('q') => {
                             events.stop();
                             break;
                         }
-                    }
+                        KeyCode::Esc => {
+                            self.mode = CurrentMode::Main(Content::Help);
+                            Action(None)
+                        }
+                        _ => Action(None),
+                    },
                 };
+
+                action.run();
             }
         }
 
@@ -224,7 +210,7 @@ impl App {
         self.list_state.select(Some(i));
     }
 
-    fn previous(&mut self) {
+    pub fn previous(&mut self) {
         // match self
         //     .list
         //     .iter()
@@ -249,7 +235,7 @@ impl App {
         self.list_state.select(Some(i));
     }
 
-    fn get_selected(&self) -> Option<&ObjList> {
+    pub fn get_selected(&self) -> Option<&ObjList> {
         let index = self.list_state.selected()?;
         self.list.get(index)
     }
