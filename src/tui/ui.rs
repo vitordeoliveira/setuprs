@@ -57,14 +57,6 @@ pub fn ui(f: &mut Frame, state: &mut App) {
     f.render_stateful_widget(list, chunks[0], &mut state.list_state);
     f.render_widget(help_instructions, chunks[1]);
 
-    if let CurrentMode::Exiting = state.mode {
-        let block = Block::bordered().title("Are you sure?");
-        let area = centered_rect(60, 60, f.size());
-
-        f.render_widget(Clear, area);
-        f.render_widget(block, area);
-    };
-
     if state.left_size > 50 {
         let block = Block::bordered().title("Popup");
         let area = centered_rect(60, 60, f.size());
@@ -72,4 +64,29 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         f.render_widget(Clear, area);
         f.render_widget(block, area);
     }
+
+    if let CurrentMode::Exiting = state.mode {
+        let area = centered_rect(30, 30, f.size());
+
+        let inner_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(centered_rect(80, 80, area));
+
+        let block = Block::bordered().title("Are you sure?");
+
+        let style = Style::default().fg(Color::Blue).bg(Color::White);
+        let yes_button = Paragraph::new(Text::styled(" Yes (y/Y) ", style))
+            .block(Block::new().padding(Padding::top(inner_layout[0].height / 2)))
+            .centered();
+
+        let no_button = Paragraph::new(Text::styled(" No (n/N) ", style))
+            .block(Block::new().padding(Padding::top(inner_layout[0].height / 2)))
+            .centered();
+
+        f.render_widget(Clear, area);
+        f.render_widget(block, area);
+        f.render_widget(yes_button, inner_layout[0]);
+        f.render_widget(no_button, inner_layout[1]);
+    };
 }
