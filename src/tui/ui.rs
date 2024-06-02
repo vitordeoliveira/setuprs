@@ -65,6 +65,14 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         f.render_widget(block, area);
     }
 
+    if let CurrentMode::Confirming = state.mode {
+        let block = Block::bordered().title("Where should the copy being made?");
+        let area = centered_rect(60, 60, f.size());
+
+        f.render_widget(Clear, area);
+        f.render_widget(block, area);
+    }
+
     if let CurrentMode::Exiting = state.mode {
         let area = centered_rect(30, 30, f.size());
 
