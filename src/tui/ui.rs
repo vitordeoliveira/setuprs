@@ -73,7 +73,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(centered_rect(80, 80, area));
 
-        let block = Block::bordered().title("Are you sure?");
+        let block = Block::bordered().title("Are you sure you want to quit?");
 
         let style = Style::default().fg(Color::Blue).bg(Color::White);
         let yes_button = Paragraph::new(Text::styled(" Yes (y/Y) ", style))
