@@ -6,7 +6,11 @@ use tokio_util::sync::CancellationToken;
 
 use crate::core::Config;
 
-use super::{modes::main::Main, ui::ui, Tui};
+use super::{
+    modes::{confirming::Confirming, main::Main},
+    ui::ui,
+    Tui,
+};
 
 pub struct EventHandler {
     rx: tokio::sync::mpsc::UnboundedReceiver<KeyCode>,
@@ -23,13 +27,11 @@ pub trait Exit {
     fn state(&mut self) -> &mut App;
 }
 
-struct Action<T: Exit>(Option<T>);
+struct Action<T: ?Sized + Exit>(Box<T>);
 
-impl<T: Exit> Action<T> {
+impl<T: ?Sized + Exit> Action<T> {
     fn run(&mut self) {
-        if let Some(ref mut e) = self.0 {
-            e.exit();
-        }
+        self.0.exit();
     }
 }
 
@@ -150,9 +152,11 @@ impl App {
             tui.terminal.draw(|f| ui(f, self))?;
 
             if let Some(keycode) = events.next().await {
-                let mut action: Action<_> = match self.mode {
-                    CurrentMode::Main(_) => Action(Some(Main::actions(self, keycode))),
-                    CurrentMode::Confirming => Action(None),
+                let action: Option<Action<dyn Exit>> = match self.mode {
+                    CurrentMode::Main(_) => Some(Action(Box::new(Main::actions(self, keycode)))),
+                    CurrentMode::Confirming => {
+                        Some(Action(Box::new(Confirming::actions(self, keycode))))
+                    }
                     CurrentMode::Exiting => match keycode {
                         KeyCode::Char('y') | KeyCode::Char('Y') => {
                             events.stop();
@@ -160,13 +164,17 @@ impl App {
                         }
                         KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
                             self.mode = CurrentMode::Main(Content::Help);
-                            Action(None)
+                            None
                         }
-                        _ => Action(None),
+                        _ => None,
                     },
                 };
 
-                action.run();
+                if let Some(mut action) = action {
+                    action.run();
+                } else if let KeyCode::Char('q') = keycode {
+                    self.mode = CurrentMode::Exiting;
+                }
             }
         }
 
