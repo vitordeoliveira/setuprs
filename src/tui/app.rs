@@ -173,6 +173,7 @@ impl App {
                 if let Some(mut action) = action {
                     action.run();
                 } else if let KeyCode::Char('q') = keycode {
+                    drop(action);
                     self.mode = CurrentMode::Exiting;
                 }
             }
