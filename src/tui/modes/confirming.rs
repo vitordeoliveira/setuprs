@@ -4,7 +4,7 @@ use crossterm::event::KeyCode;
 
 use crate::{
     core::utils::copy_dir_all,
-    tui::app::{App, CurrentMode, Exit},
+    tui::app::{App, CurrentMode, DefaultActions},
 };
 
 pub struct Confirming<'a> {
@@ -12,7 +12,9 @@ pub struct Confirming<'a> {
     state: &'a mut App,
 }
 
-impl<'a> Exit for Confirming<'a> {
+impl<'a> DefaultActions for Confirming<'a> {
+    fn exit(&mut self) {}
+
     fn keycode(&self) -> KeyCode {
         self.keycode
     }

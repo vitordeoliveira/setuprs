@@ -1,13 +1,13 @@
 use crossterm::event::KeyCode;
 
-use crate::tui::app::{App, CurrentMode, Exit};
+use crate::tui::app::{App, CurrentMode, DefaultActions};
 
 pub struct Main<'a> {
     keycode: KeyCode,
     state: &'a mut App,
 }
 
-impl<'a> Exit for Main<'a> {
+impl<'a> DefaultActions for Main<'a> {
     fn keycode(&self) -> KeyCode {
         self.keycode
     }

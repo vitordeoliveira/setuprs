@@ -1,3 +1,5 @@
+use std::env;
+
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::widgets::{ListItem, ListState};
@@ -17,21 +19,27 @@ pub struct EventHandler {
     stop_cancellation_token: CancellationToken,
 }
 
-pub trait Exit {
+pub trait DefaultActions {
     fn exit(&mut self) {
         if let KeyCode::Char('q') = self.keycode() {
             self.state().mode = CurrentMode::Exiting;
+        }
+    }
+    fn escape(&mut self) {
+        if let KeyCode::Esc = self.keycode() {
+            self.state().mode = CurrentMode::Main(Content::Help);
         }
     }
     fn keycode(&self) -> KeyCode;
     fn state(&mut self) -> &mut App;
 }
 
-struct Action<T: ?Sized + Exit>(Box<T>);
+struct Action<T: ?Sized + DefaultActions>(Box<T>);
 
-impl<T: ?Sized + Exit> Action<T> {
+impl<T: ?Sized + DefaultActions> Action<T> {
     fn run(&mut self) {
         self.0.exit();
+        self.0.escape();
     }
 }
 
