@@ -20,5 +20,5 @@ if you want to test the beta of the beta just clone and run
 cargo run -- -snapshot .
 
 # to run the tui
-cargo run -- init
+cargo run
 ```
