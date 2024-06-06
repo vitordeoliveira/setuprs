@@ -53,6 +53,7 @@ pub struct App {
     pub list_state: ListState,
     pub last_selected: Option<usize>,
     pub mode: CurrentMode,
+    pub copy_dir_input: String,
 }
 
 #[derive(Debug)]
@@ -148,6 +149,7 @@ impl App {
             list_state: ListState::default().with_selected(Some(0)),
             list,
             left_size: 50,
+            copy_dir_input: env::current_dir()?.display().to_string(),
             ..App::default()
         })
     }
@@ -160,7 +162,7 @@ impl App {
             tui.terminal.draw(|f| ui(f, self))?;
 
             if let Some(keycode) = events.next().await {
-                let action: Option<Action<dyn Exit>> = match self.mode {
+                let action: Option<Action<dyn DefaultActions>> = match self.mode {
                     CurrentMode::Main(_) => Some(Action(Box::new(Main::actions(self, keycode)))),
                     CurrentMode::Confirming => {
                         Some(Action(Box::new(Confirming::actions(self, keycode))))
