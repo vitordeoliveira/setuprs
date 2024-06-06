@@ -69,8 +69,16 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         let block = Block::bordered().title("Where should the copy being made?");
         let area = centered_rect(60, 60, f.size());
 
+        let style = Style::default().fg(Color::Blue).bg(Color::White);
+        let input = Paragraph::new(Text::styled(
+            format!(" {} ", state.copy_dir_input.clone()),
+            style,
+        ))
+        .block(block.padding(Padding::top(area.height / 2)))
+        .centered();
+
         f.render_widget(Clear, area);
-        f.render_widget(block, area);
+        f.render_widget(input, area);
     }
 
     if let CurrentMode::Exiting = state.mode {
