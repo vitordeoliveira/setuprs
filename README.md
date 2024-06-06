@@ -1,6 +1,10 @@
 # setuprs
 
-`setuprs` is a powerful command-line interface (CLI) and text user interface (TUI) application designed to simplify and accelerate the process of creating snapshots of projects. By leveraging `clap.rs` for CLI functionality and `ratatui.rs` for TUI features, `setuprs` allows users to easily "clone" scaffolds of snapshots, streamlining project setup and management.
+`setuprs` is a powerful command-line interface (CLI) and text user interface
+(TUI) application designed to simplify and accelerate the process of creating
+snapshots of projects. By leveraging `clap.rs` for CLI functionality and
+`ratatui.rs` for TUI features, `setuprs` allows users to easily "clone"
+scaffolds of snapshots, streamlining project setup and management.
 
 ## Features
 
