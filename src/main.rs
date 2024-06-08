@@ -1,5 +1,6 @@
+use std::error::Error;
+
 use clap::Parser;
-use color_eyre::eyre::Result;
 use setuprs::{
     cli::{Cli, Commands},
     core::{
@@ -11,6 +12,8 @@ use setuprs::{
     tui::app::{App, ObjList},
 };
 use uuid::Uuid;
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
