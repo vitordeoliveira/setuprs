@@ -1,4 +1,4 @@
-use std::env;
+use std::{env, panic};
 
 use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
@@ -155,9 +155,16 @@ impl App {
     }
 
     pub async fn run(&mut self) -> Result<()> {
+        let mut events = EventHandler::new();
+        let canceltoken = events.stop_cancellation_token.clone();
+        panic::set_hook(Box::new(move |message| {
+            Tui::exit().unwrap();
+            canceltoken.cancel();
+            println!("{message}");
+        }));
+
         let mut tui = Tui::new()?;
         tui.enter()?;
-        let mut events = EventHandler::new();
         loop {
             tui.terminal.draw(|f| ui(f, self))?;
 
@@ -189,7 +196,7 @@ impl App {
             }
         }
 
-        tui.exit()?;
+        Tui::exit()?;
         Ok(())
     }
 

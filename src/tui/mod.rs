@@ -32,7 +32,7 @@ impl Tui {
         Ok(())
     }
 
-    pub fn exit(&self) -> Result<()> {
+    pub fn exit() -> Result<()> {
         crossterm::execute!(
             std::io::stderr(),
             LeaveAlternateScreen,

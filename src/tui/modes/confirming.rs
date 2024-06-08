@@ -45,7 +45,7 @@ impl<'a> Confirming<'a> {
                             app.mode = CurrentMode::Exiting;
                         }
                         // TODO: when error, show error popup and reset to initial state
-                        Err(_) => println!("error"),
+                        Err(e) => panic!("{e}"),
                     };
                 }
             }
