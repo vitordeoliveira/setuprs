@@ -1,10 +1,11 @@
-use color_eyre::eyre::Result;
 use crossterm::{
     cursor,
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::backend::CrosstermBackend as Backend;
+
+use crate::error::Result;
 
 pub mod app;
 mod modes;
