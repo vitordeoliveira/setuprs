@@ -1,15 +1,14 @@
 use std::{env, panic};
 
-use color_eyre::eyre::Result;
 use crossterm::event::{self, KeyCode, KeyEventKind};
 use ratatui::widgets::{ListItem, ListState};
 use tokio::select;
 use tokio_util::sync::CancellationToken;
 
-use crate::core::Config;
+use crate::{core::Config, error::Result};
 
 use super::{
-    modes::{confirming::Confirming, main::Main},
+    modes::{confirming::Confirming, errormode::ErrorMode, main::Main},
     ui::ui,
     Tui,
 };
@@ -66,6 +65,7 @@ pub enum CurrentMode {
     Main(Content),
     Confirming,
     Exiting,
+    Error(crate::error::Error),
 }
 
 impl Default for CurrentMode {
@@ -169,7 +169,7 @@ impl App {
             tui.terminal.draw(|f| ui(f, self))?;
 
             if let Some(keycode) = events.next().await {
-                let action: Option<Action<dyn DefaultActions>> = match self.mode {
+                let action: Option<Action<dyn DefaultActions>> = match &self.mode {
                     CurrentMode::Main(_) => Some(Action(Box::new(Main::actions(self, keycode)))),
                     CurrentMode::Confirming => {
                         Some(Action(Box::new(Confirming::actions(self, keycode))))
@@ -185,6 +185,9 @@ impl App {
                         }
                         _ => None,
                     },
+                    CurrentMode::Error(_) => {
+                        Some(Action(Box::new(ErrorMode::actions(self, keycode))))
+                    }
                 };
 
                 if let Some(mut action) = action {
