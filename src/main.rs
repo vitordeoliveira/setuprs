@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use clap::Parser;
 use setuprs::{
     cli::{Cli, Commands},
@@ -9,11 +7,10 @@ use setuprs::{
         },
         Config,
     },
+    error::Result,
     tui::app::{App, ObjList},
 };
 use uuid::Uuid;
-
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
