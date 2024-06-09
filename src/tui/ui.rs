@@ -105,4 +105,17 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         f.render_widget(yes_button, inner_layout[0]);
         f.render_widget(no_button, inner_layout[1]);
     };
+
+    if let CurrentMode::Error(e) = &state.mode {
+        let block = Block::bordered().title("An Error Has Occurred");
+        let area = centered_rect(60, 60, f.size());
+
+        let style = Style::default();
+        let input = Paragraph::new(Text::styled(e.to_string(), style))
+            .block(block.padding(Padding::top(area.height / 2)))
+            .centered();
+
+        f.render_widget(Clear, area);
+        f.render_widget(input, area);
+    }
 }
