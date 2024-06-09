@@ -1,9 +1,8 @@
-use std::env;
-
 use crossterm::event::KeyCode;
 
 use crate::{
     core::utils::copy_dir_all,
+    error::Error,
     tui::app::{App, CurrentMode, DefaultActions},
 };
 
@@ -45,7 +44,9 @@ impl<'a> Confirming<'a> {
                             app.mode = CurrentMode::Exiting;
                         }
                         // TODO: when error, show error popup and reset to initial state
-                        Err(e) => panic!("{e}"),
+                        Err(e) => {
+                            app.mode = CurrentMode::Error(Error::IOError(e));
+                        }
                     };
                 }
             }
