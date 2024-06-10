@@ -110,8 +110,7 @@ pub fn ui(f: &mut Frame, state: &mut App) {
         let block = Block::bordered().title("An Error Has Occurred");
         let area = centered_rect(60, 60, f.size());
 
-        let style = Style::default();
-        let input = Paragraph::new(Text::styled(e.to_string(), style))
+        let input = Paragraph::new(Text::styled(e.to_string(), Style::default()))
             .block(block.padding(Padding::top(area.height / 2)))
             .centered();
 
