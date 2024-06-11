@@ -45,7 +45,6 @@ pub fn search_file_create_config_folder_if_not_found(
 }
 
 pub fn confirm_selection() {
-    //TODO:get id, find snapshot, copy all to the current path
     let current_path = env::current_dir();
     println!("{}", current_path.unwrap().display());
 }
