@@ -1,6 +1,6 @@
 use crossterm::event::KeyCode;
 
-use crate::tui::app::{App, DefaultActions};
+use crate::tui::app::{App, Content, CurrentMode, DefaultActions};
 
 pub struct ErrorMode<'a> {
     keycode: KeyCode,
@@ -19,6 +19,9 @@ impl<'a> DefaultActions for ErrorMode<'a> {
 
 impl<'a> ErrorMode<'a> {
     pub fn actions(app: &'a mut App, keycode: KeyCode) -> Self {
+        if let KeyCode::Char(_) = keycode {
+            app.mode = CurrentMode::Main(Content::Help)
+        }
         Self {
             keycode,
             state: app,

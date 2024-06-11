@@ -43,7 +43,6 @@ impl<'a> Confirming<'a> {
                         Ok(_) => {
                             app.mode = CurrentMode::Exiting;
                         }
-                        // TODO: when error, show error popup and reset to initial state
                         Err(e) => {
                             app.mode = CurrentMode::Error(Error::IOError(e));
                         }
