@@ -1,17 +1,13 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(version, about, long_about = None)]
+#[command(version, about, long_about = None, arg_required_else_help = true)]
 pub struct Cli {
     /// Sets a custom config file
     #[arg(short, long, value_name = "TOML FILE")]
     pub config: Option<PathBuf>,
-
-    /// Show the current configuration
-    #[arg(long)]
-    pub current_config: bool,
 
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -28,8 +24,23 @@ pub enum Commands {
         tag: Option<String>,
     },
 
-    /// Select snapshot
-    Init {},
+    /// Configuration options
+    Config(ConfigArgs),
+
+    /// Run terminal-user-interface
+    Tui {},
+}
+#[derive(Debug, Args)]
+#[command(arg_required_else_help = true)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub command: Option<ConfigOptions>,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigOptions {
+    /// Show the current configuration
+    Show,
 }
 
 // TODO: .setuprsignore.toml

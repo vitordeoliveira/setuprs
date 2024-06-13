@@ -1,6 +1,6 @@
 use clap::Parser;
 use setuprs::{
-    cli::{Cli, Commands},
+    cli::{Cli, Commands, ConfigArgs, ConfigOptions},
     core::{
         utils::{
             copy_dir_all, get_all_snapshot_ids, search_file_create_config_folder_if_not_found,
@@ -29,11 +29,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    if cli.current_config {
-        println!("{config}");
-        return Ok(());
-    }
-
     match &cli.command {
         Some(Commands::Snapshot { dir, tag }) => {
             let id = match tag {
@@ -46,14 +41,20 @@ async fn main() -> Result<()> {
             println!("{}", id);
         }
 
-        Some(Commands::Init {}) => {}
+        Some(Commands::Config(ConfigArgs { command })) => match command {
+            Some(ConfigOptions::Show) => {
+                println!("{config}");
+            }
+            _ => return Ok(()),
+        },
 
-        None => {
+        Some(Commands::Tui {}) => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
             let mut app = App::new(items, config)?;
             app.run().await?;
         }
+        None => {}
     };
 
     Ok(())
@@ -139,7 +140,8 @@ mod tests {
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
 
         let value = cmd
-            .arg("--current-config")
+            .arg("config")
+            .arg("show")
             .assert()
             .success()
             .get_output()
@@ -161,7 +163,8 @@ mod tests {
                 let value = cmd
                     .arg("--config")
                     .arg(format!("./{folder}/{file}"))
-                    .arg("--current-config")
+                    .arg("config")
+                    .arg("show")
                     .assert()
                     .success()
                     .get_output()
