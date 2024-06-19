@@ -1,7 +1,9 @@
 use std::{
-    env, fs,
+    env,
+    fs::{self, read_to_string},
     io::{self, Write},
     path::Path,
+    result,
 };
 
 use uuid::Uuid;
@@ -67,8 +69,16 @@ pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
     Ok(result)
 }
 
-fn read_ignore_file() -> io::Result<()> {
-    Ok(())
+fn ignored_files() -> Vec<String> {
+    let mut result = Vec::new();
+
+    if let Ok(file_content) = read_to_string("bla") {
+        for line in file_content.lines() {
+            result.push(line.to_string());
+        }
+    }
+
+    result
 }
 
 pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
@@ -123,6 +133,12 @@ impl Drop for Noisy {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(format!("./{}", self.folder));
     }
+}
+
+#[test]
+fn should_retrieve_a_vec_of_all_ignored_files() {
+    let expected = vec!["ignored_file_0", "ignored_file_1"];
+    assert_eq!(expected, ignored_files());
 }
 
 #[test]
