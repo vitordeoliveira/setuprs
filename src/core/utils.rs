@@ -1,9 +1,8 @@
 use std::{
     env,
-    fs::{self, read_to_string},
+    fs::{self, read_to_string, File},
     io::{self, Write},
     path::Path,
-    result,
 };
 
 use uuid::Uuid;
@@ -69,10 +68,11 @@ pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
     Ok(result)
 }
 
-fn ignored_files() -> Vec<String> {
+// TODO: now you need to create a snapshot init to create the default setuprsignore
+fn ignored_files(src: impl AsRef<Path>) -> Vec<String> {
     let mut result = Vec::new();
 
-    if let Ok(file_content) = read_to_string("bla") {
+    if let Ok(file_content) = read_to_string(src) {
         for line in file_content.lines() {
             result.push(line.to_string());
         }
@@ -83,11 +83,11 @@ fn ignored_files() -> Vec<String> {
 
 pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     fs::create_dir_all(&dst)?;
-    for entry in fs::read_dir(src)? {
+    for entry in fs::read_dir(&src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
 
-        if entry.file_name() == ".git" || entry.file_name() == "snapshots" {
+        if ignored_files(&src).contains(&entry.file_name().to_string_lossy().into_owned()) {
             continue;
         }
 
@@ -127,6 +127,14 @@ impl Noisy {
         .unwrap();
         Self { folder, file }
     }
+
+    #[allow(dead_code)]
+    fn add_setupignore(self) -> Self {
+        let path = format!("./{}/.setuprsignore", self.folder);
+        let mut file = File::create(path).unwrap();
+        file.write_all(b"ignored_file_0\nignored_file_1").unwrap();
+        self
+    }
 }
 
 impl Drop for Noisy {
@@ -137,8 +145,10 @@ impl Drop for Noisy {
 
 #[test]
 fn should_retrieve_a_vec_of_all_ignored_files() {
+    let Noisy { folder, file: _ } = &Noisy::new().add_setupignore();
     let expected = vec!["ignored_file_0", "ignored_file_1"];
-    assert_eq!(expected, ignored_files());
+    let path = format!("./{folder}/.setuprsignore");
+    assert_eq!(expected, ignored_files(path));
 }
 
 #[test]
@@ -155,6 +165,20 @@ fn should_create_folder_and_file() {
 #[test]
 fn should_copy_folder_recurcivilly() {
     let Noisy { folder, file } = &Noisy::new();
+    copy_dir_all(folder, "./test_folder_copy").unwrap();
+
+    let file: String = fs::read_to_string(format!("./test_folder_copy/{file}")).unwrap();
+    assert_eq!(
+        file,
+        "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"
+    );
+
+    let _ = fs::remove_dir_all("./test_folder_copy");
+}
+
+#[test]
+fn should_copy_folder_recurcivilly_ignoring_files_of_setuprsignore() {
+    let Noisy { folder, file } = &Noisy::new().add_setupignore();
     copy_dir_all(folder, "./test_folder_copy").unwrap();
 
     let file: String = fs::read_to_string(format!("./test_folder_copy/{file}")).unwrap();
