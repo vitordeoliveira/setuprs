@@ -1,3 +1,11 @@
+use std::{
+    env,
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+    process,
+};
+
 use clap::Parser;
 use setuprs::{
     cli::{Cli, Commands, ConfigArgs, ConfigOptions},
@@ -52,6 +60,7 @@ async fn main() -> Result<()> {
             _ => return Ok(()),
         },
 
+        Some(Commands::Init { dir }) => {
         Some(Commands::Tui {}) => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
