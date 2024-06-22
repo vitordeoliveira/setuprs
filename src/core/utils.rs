@@ -68,7 +68,6 @@ pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
     Ok(result)
 }
 
-// TODO: now you need to create a snapshot init to create the default setuprsignore
 fn ignored_files(src: impl AsRef<Path>) -> Vec<String> {
     let mut result = Vec::new();
 
