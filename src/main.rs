@@ -31,6 +31,10 @@ async fn main() -> Result<()> {
 
     match &cli.command {
         Some(Commands::Snapshot { dir, tag }) => {
+            if !Path::new(&format!("{dir}/.setuprsignore")).exists() {
+                eprintln!("Missing setuprs init files, please run setuprs init");
+                process::exit(1);
+            };
             let id = match tag {
                 Some(tag_value) => tag_value.to_string(),
                 None => Uuid::new_v4().to_string(),
