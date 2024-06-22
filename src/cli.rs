@@ -27,6 +27,12 @@ pub enum Commands {
     /// Configuration options
     Config(ConfigArgs),
 
+    /// Prepare folder to create a snapshot
+    Init {
+        #[arg(short, long)]
+        dir: Option<String>,
+    },
+
     /// Run terminal-user-interface
     Tui {},
 }
