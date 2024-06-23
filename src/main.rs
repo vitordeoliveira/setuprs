@@ -71,6 +71,15 @@ async fn main() -> Result<()> {
                         .to_string()
                 }
             };
+            let mut file_path = PathBuf::from(&current_dir);
+            file_path.push(".setuprsignore");
+
+            let mut file = File::create(&file_path).expect("Failed to create .setuprsignore file");
+
+            file.write_all(b".git\nsnapshots/")
+                .expect("Failed to write on .setuprsignore file");
+        }
+
         Some(Commands::Tui {}) => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
