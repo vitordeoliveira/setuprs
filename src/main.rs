@@ -94,12 +94,18 @@ async fn main() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, str::FromStr};
+    use std::{
+        fs::{self, File},
+        io::Write,
+        path::Path,
+        str::FromStr,
+    };
 
     use assert_cmd::Command;
     use setuprs::core::{utils::search_file_create_config_folder_if_not_found, Config};
     use uuid::Uuid;
 
+    #[allow(dead_code)]
     struct Noisy {
         configuration: Option<(String, String)>,
         cleanup: Option<Box<dyn Fn()>>,
