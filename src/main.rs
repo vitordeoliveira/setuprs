@@ -107,64 +107,59 @@ mod tests {
 
     #[allow(dead_code)]
     struct Noisy {
-        configuration: Option<(String, String)>,
+        folder: String,
         cleanup: Option<Box<dyn Fn()>>,
     }
 
+    #[allow(dead_code)]
+    struct NoisyFile {
+        name: String,
+        content: String,
+    }
+
     impl Noisy {
-        fn new(cleanup: Option<Box<dyn Fn()>>) -> Self {
+        #[allow(dead_code)]
+        fn new() -> Self {
+            let uuid = Uuid::new_v4().to_string();
+            fs::create_dir(&uuid).unwrap();
             Self {
-                configuration: None,
-                cleanup,
+                folder: uuid,
+                cleanup: None,
             }
+        }
+
+        fn add_file(self, noisy_file: NoisyFile) -> Self {
+            let path = format!("./{}/{}", self.folder, noisy_file.name);
+            let mut file = File::create(path).unwrap();
+            file.write_all(noisy_file.content.as_bytes()).unwrap();
+            self
+        }
+
+        fn add_config(self) -> Self {
+            let config = Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string(),
+            };
+
+            let file = "file.toml".to_string();
+
+            search_file_create_config_folder_if_not_found(
+                format!("./{}/{file}", self.folder).as_str(),
+                &config,
+            )
+            .unwrap();
+            self
         }
 
         fn overwrite_cleanup(&mut self, closure: Box<dyn Fn()>) {
             self.cleanup = Some(Box::new(closure));
         }
-
-        // fn set_configuration_folder_without_create(mut self) -> Self {
-        //     if self.configuration.is_none() {
-        //         let (folder, file) = (
-        //             Uuid::new_v4().to_string(),
-        //             format!("{}.toml", Uuid::new_v4()),
-        //         );
-        //
-        //         self.configuration = Some((folder, file));
-        //     }
-        //     self
-        // }
-
-        fn set_configuration_folder(mut self) -> Self {
-            if self.configuration.is_none() {
-                let (folder, file) = (
-                    Uuid::new_v4().to_string(),
-                    format!("{}.toml", Uuid::new_v4()),
-                );
-
-                let config = Config {
-                    config_file_path: ".".to_string(),
-                    debug_mode: "error".to_string(),
-                    snapshots_path: ".".to_string(),
-                };
-
-                search_file_create_config_folder_if_not_found(
-                    format!("./{folder}/{file}").as_str(),
-                    &config,
-                )
-                .unwrap();
-
-                self.configuration = Some((folder, file));
-            }
-            self
-        }
     }
 
     impl Drop for Noisy {
         fn drop(&mut self) {
-            if let Some((folder, _)) = &self.configuration {
-                let _ = fs::remove_dir_all(format!("./{}", folder));
-            }
+            let _ = fs::remove_dir_all(format!("./{}", self.folder));
 
             match &self.cleanup {
                 Some(f) => f(),
