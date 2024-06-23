@@ -43,6 +43,7 @@ async fn main() -> Result<()> {
                 eprintln!("Missing setuprs init files, please run setuprs init");
                 process::exit(1);
             };
+
             let id = match tag {
                 Some(tag_value) => tag_value.to_string(),
                 None => Uuid::new_v4().to_string(),
@@ -61,6 +62,15 @@ async fn main() -> Result<()> {
         },
 
         Some(Commands::Init { dir }) => {
+            let current_dir = match dir {
+                Some(dir) => dir.to_string(),
+                None => {
+                    env::current_dir()
+                        .expect("Failed to get the current directory. Make sure the program has the necessary permissions.")
+                        .display()
+                        .to_string()
+                }
+            };
         Some(Commands::Tui {}) => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
