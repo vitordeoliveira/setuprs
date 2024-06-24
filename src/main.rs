@@ -175,6 +175,58 @@ mod tests {
     }
 
     #[test]
+    fn on_command_create_should_ignore_files_and_folders_on_setuprsignore() {
+        let mut noisy = Noisy::new()
+            .add_config()
+            .add_file(NoisyFile {
+                name: ".setuprsignore".to_string(),
+                content: "file1\nfolder1\nfolder2".to_string(),
+            })
+            .add_file(NoisyFile {
+                name: "file1".to_string(),
+                content: "".to_string(),
+            })
+            .add_folder("folder1".to_string())
+            .add_folder("folder2".to_string());
+
+        let folder = noisy.folder.clone();
+
+        noisy.overwrite_cleanup(Box::new(move || {
+            fs::remove_dir_all("tag_name").unwrap();
+        }));
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        let on_folder = |file: &str| -> String { format!("./tag_name/{file}") };
+
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("-d")
+            .arg(format!("./{folder}"))
+            .arg("-t")
+            .arg("tag_name")
+            .assert()
+            .success()
+            .stdout("tag_name\n");
+
+        assert!(!Path::new(&on_folder("file1")).exists());
+        assert!(!Path::new(&on_folder("folder1")).exists());
+        assert!(!Path::new(&on_folder("folder2")).exists());
+    }
+
+    #[test]
+    fn on_command_init_set_default_snapshot_config_on_init() {
+        let Noisy { folder, cleanup: _ } = &Noisy::new().add_config();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        let path = format!("./{folder}/.setuprsignore");
+
+        cmd.arg("init").arg("-d").arg(folder).assert().success();
+        assert!(Path::new(&path).exists());
+    }
+
+    #[test]
     fn current_config_should_return_correct_default_info() {
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
 
@@ -196,39 +248,39 @@ mod tests {
 
     #[test]
     fn current_config_should_return_correct_info_after_define_new_config() {
-        match &Noisy::new(None).set_configuration_folder().configuration {
-            Some((folder, file)) => {
-                let mut cmd = Command::cargo_bin("setuprs").unwrap();
-                let value = cmd
-                    .arg("--config")
-                    .arg(format!("./{folder}/{file}"))
-                    .arg("config")
-                    .arg("show")
-                    .assert()
-                    .success()
-                    .get_output()
-                    .clone();
+        let Noisy { folder, cleanup: _ } = &Noisy::new().add_config();
 
-                let raw_stdout = String::from_utf8(value.stdout);
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        let value = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("config")
+            .arg("show")
+            .assert()
+            .success()
+            .get_output()
+            .clone();
 
-                assert_eq!(
-                    Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
-                    Config {
-                        config_file_path: ".".to_string(),
-                        debug_mode: "error".to_string(),
-                        snapshots_path: ".".to_string()
-                    }
-                )
+        let raw_stdout = String::from_utf8(value.stdout);
+
+        assert_eq!(
+            Config::from_str(raw_stdout.unwrap().as_ref()).unwrap(),
+            Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string()
             }
-            None => panic!("error"),
-        };
+        )
     }
 
     #[test]
-    fn snapshots_created_with_success() {
-        let mut noisy = Noisy::new(None).set_configuration_folder();
-
-        let (folder, file) = noisy.configuration.clone().unwrap();
+    fn snapshots_created_with_success_without_tag() {
+        let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
+            name: ".setuprsignore".to_string(),
+            content: "".to_string(),
+        });
+        let folder = &noisy.folder;
+        let file = "file.toml".to_string();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
         let value = cmd
@@ -270,17 +322,41 @@ mod tests {
     }
 
     #[test]
-    fn snapshots_created_with_tag_success() {
-        let noisy = Noisy::new(Some(Box::new(|| {
-            fs::remove_dir_all("tag_name").unwrap();
-        })))
-        .set_configuration_folder();
+    fn snapshots_should_fail_when_no_setuprsignore() {
+        let noisy = &mut Noisy::new().add_config();
+        let folder = noisy.folder.clone();
 
-        let (folder, file) = noisy.configuration.clone().unwrap();
+        let file = "file.toml".to_string();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        let value = cmd
-            .arg("--config")
+        cmd.arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .arg("snapshot")
+            .arg("-d")
+            .arg(format!("./{folder}"))
+            .arg("-t")
+            .arg("tag_name")
+            .assert()
+            .failure()
+            .stderr("Missing setuprs init files, please run setuprs init\n");
+    }
+
+    #[test]
+    fn snapshots_created_with_tag_success() {
+        let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
+            name: ".setuprsignore".to_string(),
+            content: "".to_string(),
+        });
+        let folder = noisy.folder.clone();
+
+        let file = "file.toml".to_string();
+
+        noisy.overwrite_cleanup(Box::new(move || {
+            fs::remove_dir_all("tag_name").unwrap();
+        }));
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
             .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
             .arg("-d")
@@ -289,18 +365,11 @@ mod tests {
             .arg("tag_name")
             .assert()
             .success()
-            .get_output()
-            .clone();
+            .stdout("tag_name\n");
 
-        let binding = String::from_utf8(value.stdout).unwrap();
-        let snapshot_file = binding.lines().next().expect("No line found").to_string();
-
-        let read_copied_file: String =
-            fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
-
+        let read_copied_file: String = fs::read_to_string(format!("./tag_name/{file}")).unwrap();
         let config: Config = toml::from_str(&read_copied_file).unwrap();
 
-        assert_eq!(snapshot_file, "tag_name");
         assert_eq!(
             config,
             Config {
