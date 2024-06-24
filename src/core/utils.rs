@@ -70,8 +70,8 @@ pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
 
 fn ignored_files(src: impl AsRef<Path>) -> Vec<String> {
     let mut result = Vec::new();
-
-    if let Ok(file_content) = read_to_string(src) {
+    let path = src.as_ref().join(".setuprsignore");
+    if let Ok(file_content) = read_to_string(path) {
         for line in file_content.lines() {
             result.push(line.to_string());
         }
@@ -86,6 +86,7 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<
         let entry = entry?;
         let ty = entry.file_type()?;
 
+        // println!("{:?}", ignored_files(&src));
         if ignored_files(&src).contains(&entry.file_name().to_string_lossy().into_owned()) {
             continue;
         }
@@ -140,8 +141,7 @@ fn should_retrieve_a_vec_of_all_ignored_files() {
         content: "ignored_file_0\nignored_file_1".to_string(),
     });
     let expected = vec!["ignored_file_0", "ignored_file_1"];
-    let path = format!("./{folder}/.setuprsignore");
-    assert_eq!(expected, ignored_files(path));
+    assert_eq!(expected, ignored_files(folder));
 }
 
 #[test]
