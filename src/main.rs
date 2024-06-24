@@ -155,6 +155,12 @@ mod tests {
         fn overwrite_cleanup(&mut self, closure: Box<dyn Fn()>) {
             self.cleanup = Some(Box::new(closure));
         }
+
+        fn add_folder(self, folder_name: String) -> Self {
+            let path = format!("./{}/{}", self.folder, folder_name);
+            fs::create_dir(path).unwrap();
+            self
+        }
     }
 
     impl Drop for Noisy {
