@@ -180,14 +180,18 @@ mod tests {
             .add_config()
             .add_file(NoisyFile {
                 name: ".setuprsignore".to_string(),
-                content: "file1\nfolder1\nfolder2".to_string(),
+                content: "file1\nfolder1\nfolder2/file2".to_string(),
             })
             .add_file(NoisyFile {
                 name: "file1".to_string(),
                 content: "".to_string(),
             })
             .add_folder("folder1".to_string())
-            .add_folder("folder2".to_string());
+            .add_folder("folder2".to_string())
+            .add_file(NoisyFile {
+                name: "folder2/file2".to_string(),
+                content: "".to_string(),
+            });
 
         let folder = noisy.folder.clone();
 
@@ -212,7 +216,8 @@ mod tests {
 
         assert!(!Path::new(&on_folder("file1")).exists());
         assert!(!Path::new(&on_folder("folder1")).exists());
-        assert!(!Path::new(&on_folder("folder2")).exists());
+        assert!(Path::new(&on_folder("folder2")).exists());
+        assert!(!Path::new(&on_folder("folder2/file2")).exists());
     }
 
     #[test]

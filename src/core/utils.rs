@@ -138,9 +138,9 @@ impl Drop for Noisy {
 fn should_retrieve_a_vec_of_all_ignored_files() {
     let Noisy { folder } = &Noisy::new().add_file(NoisyFile {
         name: ".setuprsignore".to_string(),
-        content: "ignored_file_0\nignored_file_1".to_string(),
+        content: "ignored_file_0\nignored_file_1\nfolder/ignored_file_2".to_string(),
     });
-    let expected = vec!["ignored_file_0", "ignored_file_1"];
+    let expected = vec!["ignored_file_0", "ignored_file_1", "folder/ignored_file_2"];
     assert_eq!(expected, ignored_files(folder));
 }
 
