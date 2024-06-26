@@ -87,7 +87,7 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<
         let ty = entry.file_type()?;
 
         // println!("{:?}", ignored_files(&src));
-        if ignored_files(&src).contains(&entry.file_name().to_string_lossy().into_owned()) {
+        if ignored_files(&src).contains(&entry.path().to_string_lossy().into_owned()) {
             continue;
         }
 
