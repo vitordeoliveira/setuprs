@@ -111,14 +111,12 @@ mod tests {
         cleanup: Option<Box<dyn Fn()>>,
     }
 
-    #[allow(dead_code)]
     struct NoisyFile {
         name: String,
         content: String,
     }
 
     impl Noisy {
-        #[allow(dead_code)]
         fn new() -> Self {
             let uuid = Uuid::new_v4().to_string();
             fs::create_dir(&uuid).unwrap();
