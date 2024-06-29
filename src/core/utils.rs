@@ -210,10 +210,10 @@ mod tests {
         }
     }
 
-    fn set_value(new_value: Vec<Pattern>) {
+    fn set_value(new_value: Option<Vec<Pattern>>) {
         println!("SET_VALUE: {:?}", new_value);
         let mut setup = SETUPRSIGNORE.lock().unwrap();
-        *setup = Some(new_value);
+        *setup = new_value;
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod tests {
             content: "ignored_file_0\nignored_file_1\nfolder/ignored_file_2".to_string(),
         });
 
-        set_value(load_gitignore_patterns(Path::new(folder)));
+        set_value(Some(load_gitignore_patterns(Path::new(folder))));
 
         assert!(is_ignored(Path::new("ignored_file_0")));
         assert!(is_ignored(Path::new("ignored_file_1")));
@@ -241,7 +241,7 @@ mod tests {
             content: "ignored_file_0\nignored_file_1\nfolder/ignored_file_2".to_string(),
         });
 
-        set_value(load_gitignore_patterns(Path::new(folder)));
+        set_value(Some(load_gitignore_patterns(Path::new(folder))));
 
         assert!(!is_ignored(Path::new("file_1")));
         assert!(is_ignored(Path::new("ignored_file_0")));
@@ -278,7 +278,8 @@ mod tests {
     fn should_copy_folder_recurcivilly() {
         let noisy = &mut Noisy::new();
         let folder = &noisy.folder.clone();
-
+        set_value(None);
+        
         noisy.overwrite_cleanup(Box::new(move || {
             fs::remove_dir_all("test_folder_copy").unwrap();
         }));
@@ -341,7 +342,7 @@ mod tests {
             fs::remove_dir_all("test_folder_copy").unwrap();
         }));
 
-        set_value(load_gitignore_patterns(Path::new(folder)));
+        set_value(None);
         copy_dir_all(folder, "./test_folder_copy").unwrap();
 
         let on_folder = |file: &str| -> String { format!("./test_folder_copy/{file}") };
