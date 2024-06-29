@@ -142,6 +142,7 @@ mod tests {
     };
 
     use glob::Pattern;
+    use serial_test::serial;
     use uuid::Uuid;
 
     use crate::core::{
@@ -218,6 +219,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_return_true_when_file_is_on_ignore() {
         let Noisy { folder, cleanup: _ } = &Noisy::new().add_file(NoisyFile {
             name: ".setuprsignore".to_string(),
@@ -234,6 +236,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_return_false_when_file_is_not_on_ignore() {
         let Noisy { folder, cleanup: _ } = &Noisy::new().add_file(NoisyFile {
             name: ".setuprsignore".to_string(),
@@ -247,6 +250,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_create_folder_and_file() {
         let Noisy { folder, cleanup: _ } = &Noisy::new();
 
@@ -272,6 +276,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_copy_folder_recurcivilly() {
         let Noisy { folder, cleanup: _ } = &Noisy::new();
 
@@ -301,6 +306,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_copy_folder_recurcivilly_ignoring_files_of_setuprsignore() {
         let noisy = &mut Noisy::new()
             .add_file(NoisyFile {
@@ -345,6 +351,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn should_retrieve_id() {
         let Noisy { folder, cleanup: _ } = &Noisy::new();
 

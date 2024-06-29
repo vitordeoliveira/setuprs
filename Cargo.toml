@@ -15,6 +15,7 @@ lazy_static = "1.5.0"
 ratatui = "0.26.2"
 serde = "1.0.197"
 serde_derive = "1.0.197"
+serial_test = "3.1.1"
 thiserror = "1.0.61"
 tokio = { version = "1.37.0", features = ["full"] }
 tokio-util = "0.7.11"
