@@ -1,5 +1,4 @@
 use glob::Pattern;
-use lazy_static::lazy_static;
 use std::{
     env, fs,
     io::{self, Write},
@@ -9,9 +8,7 @@ use std::{
 
 use super::Config;
 
-lazy_static! {
-    static ref SETUPRSIGNORE: Mutex<Option<Vec<Pattern>>> = Mutex::new(None);
-}
+static SETUPRSIGNORE: Mutex<Option<Vec<Pattern>>> = Mutex::new(None);
 
 pub fn search_file_create_config_folder_if_not_found(
     folder_path_and_file: &str,
@@ -278,8 +275,8 @@ mod tests {
     fn should_copy_folder_recurcivilly() {
         let noisy = &mut Noisy::new();
         let folder = &noisy.folder.clone();
+
         set_value(None);
-        
         noisy.overwrite_cleanup(Box::new(move || {
             fs::remove_dir_all("test_folder_copy").unwrap();
         }));
