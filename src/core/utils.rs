@@ -118,8 +118,6 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<
         let ty = entry.file_type()?;
         get_or_set_value(load_gitignore_patterns(src.as_ref()));
 
-        println!("ENTRY: {}", entry.path().display());
-        println!("IS IGNORED: {}", is_ignored(&entry.path()));
         if is_ignored(&entry.path()) {
             continue;
         }
