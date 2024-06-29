@@ -276,7 +276,12 @@ mod tests {
     #[test]
     #[serial]
     fn should_copy_folder_recurcivilly() {
-        let Noisy { folder, cleanup: _ } = &Noisy::new();
+        let noisy = &mut Noisy::new();
+        let folder = &noisy.folder.clone();
+
+        noisy.overwrite_cleanup(Box::new(move || {
+            fs::remove_dir_all("test_folder_copy").unwrap();
+        }));
 
         let config = Config {
             config_file_path: ".".to_string(),
@@ -299,8 +304,6 @@ mod tests {
             file,
             "config_file_path = '.'\ndebug_mode = 'error'\nsnapshots_path = '.'"
         );
-
-        let _ = fs::remove_dir_all("./test_folder_copy");
     }
 
     #[test]
@@ -334,11 +337,11 @@ mod tests {
             },
         );
 
-        set_value(load_gitignore_patterns(Path::new(folder)));
         noisy.overwrite_cleanup(Box::new(move || {
             fs::remove_dir_all("test_folder_copy").unwrap();
         }));
 
+        set_value(load_gitignore_patterns(Path::new(folder)));
         copy_dir_all(folder, "./test_folder_copy").unwrap();
 
         let on_folder = |file: &str| -> String { format!("./test_folder_copy/{file}") };
