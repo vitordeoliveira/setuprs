@@ -1,11 +1,3 @@
-use std::{
-    env,
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
-    process,
-};
-
 use clap::Parser;
 use setuprs::{
     cli::{Cli, Commands, ConfigArgs, ConfigOptions},
@@ -17,6 +9,13 @@ use setuprs::{
     },
     error::Result,
     tui::app::{App, ObjList},
+};
+use std::{
+    env,
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+    process,
 };
 use uuid::Uuid;
 
@@ -102,6 +101,7 @@ mod tests {
     };
 
     use assert_cmd::Command;
+    use serial_test::serial;
     use setuprs::core::{utils::search_file_create_config_folder_if_not_found, Config};
     use uuid::Uuid;
 
@@ -173,6 +173,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn on_command_create_should_ignore_files_and_folders_on_setuprsignore() {
         let mut noisy = Noisy::new()
             .add_config()
@@ -345,6 +346,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn snapshots_created_with_tag_success() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
             name: ".setuprsignore".to_string(),
