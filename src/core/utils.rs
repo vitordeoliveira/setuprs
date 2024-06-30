@@ -74,7 +74,6 @@ fn is_ignored(path: &Path) -> bool {
 
     if let Some(ref ignore_patterns) = *setup {
         if let Some(path_str) = path.to_str() {
-            println!("PATTERN: {}", path_str);
             for pattern in ignore_patterns.iter() {
                 if pattern.matches(path_str) {
                     return true;
@@ -86,22 +85,23 @@ fn is_ignored(path: &Path) -> bool {
 }
 
 fn load_gitignore_patterns(path: &Path) -> Vec<Pattern> {
-    let path = format!("{}/.setuprsignore", path.display());
+    let path_setuprsignore = format!("{}/.setuprsignore", path.display());
     let mut patterns = Vec::new();
-    if let Ok(lines) = fs::read_to_string(path) {
+    if let Ok(lines) = fs::read_to_string(path_setuprsignore) {
         for line in lines.lines() {
             let trimmed = line.trim();
             if !trimmed.is_empty() && !trimmed.starts_with('#') {
-                if let Ok(pattern) = Pattern::new(trimmed) {
+                if let Ok(pattern) = Pattern::new(&format!("{}/{trimmed}", path.display())) {
                     patterns.push(pattern);
                 }
             }
         }
     }
+
     patterns
 }
 
-fn get_or_set_value(new_value: Vec<Pattern>) {
+fn set_value(new_value: Vec<Pattern>) {
     let mut setup = SETUPRSIGNORE.lock().unwrap();
     if setup.is_none() {
         *setup = Some(new_value);
@@ -110,10 +110,11 @@ fn get_or_set_value(new_value: Vec<Pattern>) {
 
 pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
     fs::create_dir_all(&dst)?;
+
     for entry in fs::read_dir(&src)? {
         let entry = entry?;
         let ty = entry.file_type()?;
-        get_or_set_value(load_gitignore_patterns(src.as_ref()));
+        set_value(load_gitignore_patterns(src.as_ref()));
 
         if is_ignored(&entry.path()) {
             continue;
@@ -208,7 +209,6 @@ mod tests {
     }
 
     fn set_value(new_value: Option<Vec<Pattern>>) {
-        println!("SET_VALUE: {:?}", new_value);
         let mut setup = SETUPRSIGNORE.lock().unwrap();
         *setup = new_value;
     }
@@ -223,9 +223,12 @@ mod tests {
 
         set_value(Some(load_gitignore_patterns(Path::new(folder))));
 
-        assert!(is_ignored(Path::new("ignored_file_0")));
-        assert!(is_ignored(Path::new("ignored_file_1")));
-        assert!(is_ignored(Path::new("folder/ignored_file_2")));
+        let on_folder = |file: &str| -> String { format!("{folder}/{file}") };
+
+        assert!(is_ignored(Path::new(&format!("{folder}/ignored_file_0"))));
+        assert!(is_ignored(Path::new(&on_folder("ignored_file_0"))));
+        assert!(is_ignored(Path::new(&on_folder("ignored_file_1"))));
+        assert!(is_ignored(Path::new(&on_folder("folder/ignored_file_2"))));
 
         assert!(!is_ignored(Path::new("file_1")));
     }
@@ -240,8 +243,9 @@ mod tests {
 
         set_value(Some(load_gitignore_patterns(Path::new(folder))));
 
-        assert!(!is_ignored(Path::new("file_1")));
-        assert!(is_ignored(Path::new("ignored_file_0")));
+        let on_folder = |file: &str| -> String { format!("{folder}/{file}") };
+        assert!(!is_ignored(Path::new(&on_folder("file_1"))));
+        assert!(is_ignored(Path::new(&on_folder("ignored_file_0"))));
     }
 
     #[test]
@@ -313,7 +317,7 @@ mod tests {
                 content: "".to_string(),
             })
             .add_file(NoisyFile {
-                name: "normalfile".to_string(),
+                name: "normalfile1".to_string(),
                 content: "".to_string(),
             })
             .add_file(NoisyFile {
@@ -331,7 +335,7 @@ mod tests {
             folder.to_owned(),
             NoisyFile {
                 name: ".setuprsignore".to_string(),
-                content: format!("{folder}/ignored_file_0\n{folder}/folder/ignored_file_1"),
+                content: format!("ignored_file_0\nfolder/ignored_file_1"),
             },
         );
 

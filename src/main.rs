@@ -175,7 +175,7 @@ mod tests {
     #[test]
     #[serial]
     fn on_command_create_should_ignore_files_and_folders_on_setuprsignore() {
-        let mut noisy = Noisy::new()
+        let noisy = &mut Noisy::new()
             .add_config()
             .add_file(NoisyFile {
                 name: ".setuprsignore".to_string(),
@@ -216,7 +216,7 @@ mod tests {
         assert!(!Path::new(&on_folder("file1")).exists());
         assert!(!Path::new(&on_folder("folder1")).exists());
         assert!(Path::new(&on_folder("folder2")).exists());
-        // assert!(!Path::new(&on_folder("folder2/file2")).exists());
+        assert!(!Path::new(&on_folder("folder2/file2")).exists());
     }
 
     #[test]
