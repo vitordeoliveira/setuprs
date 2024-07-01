@@ -1,6 +1,6 @@
 use clap::Parser;
 use setuprs::{
-    cli::{Cli, Commands, ConfigArgs, ConfigOptions},
+    cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions},
     core::{
         utils::{
             copy_dir_all, get_all_snapshot_ids, search_file_create_config_folder_if_not_found,
@@ -37,21 +37,25 @@ async fn main() -> Result<()> {
     }
 
     match &cli.command {
-        Some(Commands::Snapshot { dir, tag }) => {
-            if !Path::new(&format!("{dir}/.setuprsignore")).exists() {
-                eprintln!("Missing setuprs init files, please run setuprs init");
-                process::exit(1);
-            };
+        Some(Commands::Snapshot(SnapshotArgs { command })) => match command {
+            SnapshotOptions::Create { project_path, name } => {
+                if !Path::new(&format!("{project_path}/.setuprsignore")).exists() {
+                    eprintln!("Missing setuprs init files, please run setuprs init");
+                    process::exit(1);
+                };
 
-            let id = match tag {
-                Some(tag_value) => tag_value.to_string(),
-                None => Uuid::new_v4().to_string(),
-            };
+                let id = match name {
+                    Some(tag_value) => tag_value.to_string(),
+                    None => Uuid::new_v4().to_string(),
+                };
 
-            copy_dir_all(dir, format!("{}/{}", &config.snapshots_path, id))?;
+                copy_dir_all(project_path, format!("{}/{}", &config.snapshots_path, id))?;
 
-            println!("{}", id);
-        }
+                println!("{}", id);
+            }
+
+            _ => return Ok(()),
+        },
 
         Some(Commands::Config(ConfigArgs { command })) => match command {
             Some(ConfigOptions::Show) => {
@@ -205,9 +209,9 @@ mod tests {
         cmd.arg("--config")
             .arg(format!("./{folder}/file.toml"))
             .arg("snapshot")
-            .arg("-d")
+            .arg("create")
             .arg(format!("./{folder}"))
-            .arg("-t")
+            .arg("-n")
             .arg("tag_name")
             .assert()
             .success()
@@ -291,7 +295,7 @@ mod tests {
             .arg("--config")
             .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
-            .arg("-d")
+            .arg("create")
             .arg(format!("./{folder}"))
             .assert()
             .get_output()
@@ -336,9 +340,9 @@ mod tests {
         cmd.arg("--config")
             .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
-            .arg("-d")
+            .arg("create")
             .arg(format!("./{folder}"))
-            .arg("-t")
+            .arg("-n")
             .arg("tag_name")
             .assert()
             .failure()
@@ -364,9 +368,9 @@ mod tests {
         cmd.arg("--config")
             .arg(format!("./{folder}/{file}"))
             .arg("snapshot")
-            .arg("-d")
+            .arg("create")
             .arg(format!("./{folder}"))
-            .arg("-t")
+            .arg("-n")
             .arg("tag_name")
             .assert()
             .success()
@@ -384,47 +388,4 @@ mod tests {
             }
         );
     }
-
-    // TODO: is this test usefull also?
-    // #[test]
-    // fn if_folder_config_folder_not_exist_should_stdout_filepath() {
-    //     let noisy = Noisy::new(None).set_configuration_folder_without_create();
-    //     let (folder, file) = noisy.configuration.clone().unwrap();
-    //
-    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
-    //
-    //     let output = cmd
-    //         .arg("--config")
-    //         .arg(format!("./{folder}/{file}"))
-    //         .assert()
-    //         .success()
-    //         .get_output()
-    //         .clone();
-    //
-    //     let binding = String::from_utf8(output.stdout).unwrap(); let snapshot_file = binding.lines().next().expect("No line found").to_string();
-    //
-    //     let expected = format!("Created file: ./{folder}/{file}");
-    //     assert_eq!(snapshot_file, expected);
-    // }
-
-    // TODO: this test idea might be useless
-    // #[test]
-    // fn if_folder_config_folder_exist_should_not_stdout_filepath() {
-    //     let noisy = Noisy::new(None).set_configuration_folder();
-    //     let (folder, file) = noisy.configuration.clone().unwrap();
-    //
-    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
-    //     let output = cmd
-    //         .arg("--config")
-    //         .arg(format!("./{folder}/{file}"))
-    //         .assert()
-    //         .success()
-    //         .get_output()
-    //         .clone();
-    //
-    //     let binding = String::from_utf8(output.stdout).unwrap();
-    //     let snapshot_file = binding.to_string();
-    //
-    //     assert_eq!(snapshot_file, "");
-    // }
 }

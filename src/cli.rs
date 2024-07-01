@@ -15,14 +15,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-    /// Create snapshot
-    Snapshot {
-        #[arg(short, long)]
-        dir: String,
-
-        #[arg(short, long)]
-        tag: Option<String>,
-    },
+    /// Snapshot commands
+    Snapshot(SnapshotArgs),
 
     /// Configuration options
     Config(ConfigArgs),
@@ -47,6 +41,38 @@ pub struct ConfigArgs {
 pub enum ConfigOptions {
     /// Show the current configuration
     Show,
+}
+
+#[derive(Debug, Args)]
+#[command(arg_required_else_help = true)]
+pub struct SnapshotArgs {
+    #[command(subcommand)]
+    pub command: SnapshotOptions,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum SnapshotOptions {
+    /// Create new snapshot
+    #[command(arg_required_else_help = true)]
+    Create {
+        /// Define FROM here setuprs should create the snapshot
+        project_path: String,
+
+        /// If set will create a name for the snapshot, if not will create an unique ID
+        #[arg(short, long)]
+        name: Option<String>,
+    },
+
+    /// Clone snapshot
+    #[command(arg_required_else_help = true)]
+    Clone {
+        /// Select snapshot
+        snapshot: String,
+
+        /// Define TO here setuprs should clone the snapshot
+        #[arg(short, long)]
+        destination_path: Option<String>,
+    },
 }
 
 // TODO: snapshots metadata
