@@ -335,7 +335,7 @@ mod tests {
             folder.to_owned(),
             NoisyFile {
                 name: ".setuprsignore".to_string(),
-                content: format!("ignored_file_0\nfolder/ignored_file_1"),
+                content: "ignored_file_0\nfolder/ignored_file_1".to_string(),
             },
         );
 
