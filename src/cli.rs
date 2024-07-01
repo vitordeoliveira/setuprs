@@ -49,6 +49,5 @@ pub enum ConfigOptions {
     Show,
 }
 
-// TODO: .setuprsignore.toml
 // TODO: snapshots metadata
 // PERF: add tags (names) to the snapshots
