@@ -1,10 +1,7 @@
 use glob::Pattern;
-use std::{
-    env, fs,
-    io::{self, Write},
-    path::Path,
-    sync::Mutex,
-};
+use std::{env, fs, io::Write, path::Path, sync::Mutex};
+
+use crate::error::Result;
 
 use super::Config;
 
@@ -17,7 +14,7 @@ pub fn search_file_create_config_folder_if_not_found(
         debug_mode,
         config_file_path,
     }: &Config,
-) -> Result<String, std::io::Error> {
+) -> Result<String> {
     let file_path = Path::new(folder_path_and_file);
 
     let mut response = String::new();
@@ -51,7 +48,7 @@ pub fn confirm_selection() {
     println!("{}", current_path.unwrap().display());
 }
 
-pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> io::Result<Vec<String>> {
+pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> Result<Vec<String>> {
     let mut result: Vec<String> = vec![];
     if let Ok(entries) = fs::read_dir(src) {
         entries.for_each(|entry| {
@@ -108,7 +105,7 @@ fn set_value(new_value: Vec<Pattern>) {
     }
 }
 
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<()> {
     fs::create_dir_all(&dst)?;
 
     for entry in fs::read_dir(&src)? {
