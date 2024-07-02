@@ -2,7 +2,6 @@ use crossterm::event::KeyCode;
 
 use crate::{
     core::utils::copy_dir_all,
-    error::Error,
     tui::app::{App, CurrentMode, DefaultActions},
 };
 
@@ -44,7 +43,7 @@ impl<'a> Confirming<'a> {
                             app.mode = CurrentMode::Exiting;
                         }
                         Err(e) => {
-                            app.mode = CurrentMode::Error(Error::IOError(e));
+                            app.mode = CurrentMode::Error(e);
                         }
                     };
                 }
