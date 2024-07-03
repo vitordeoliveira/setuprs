@@ -73,6 +73,9 @@ pub enum SnapshotOptions {
         #[arg(short, long)]
         destination_path: Option<String>,
     },
+
+    /// Show all snapshots_path
+    Show,
 }
 
 // TODO: snapshots metadata
@@ -89,7 +92,10 @@ mod tests {
     use serial_test::serial;
     use uuid::Uuid;
 
-    use crate::core::{utils::search_file_create_config_folder_if_not_found, Config};
+    use crate::core::{
+        utils::{copy_dir_all, search_file_create_config_folder_if_not_found},
+        Config,
+    };
 
     #[allow(dead_code)]
     struct Noisy {
@@ -110,6 +116,10 @@ mod tests {
                 folder: uuid,
                 cleanup: None,
             }
+        }
+
+        fn folder(&self) -> String {
+            self.folder.clone()
         }
 
         fn add_file(self, noisy_file: NoisyFile) -> Self {
@@ -160,7 +170,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn on_command_create_should_ignore_files_and_folders_on_setuprsignore() {
+    fn on_snapshot_create_should_ignore_files_and_folders_on_setuprsignore() {
         let noisy = &mut Noisy::new()
             .add_config()
             .add_file(NoisyFile {
@@ -206,7 +216,48 @@ mod tests {
     }
 
     #[test]
-    fn on_command_init_set_default_snapshot_config_on_init() {
+    fn on_snapshot_show_should_return_snapshots() {
+        let noisy = &mut Noisy::new().add_config();
+
+        let folder = noisy.folder();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        // create a snapshots by force
+        // copy_dir_all(&folder, "./snapshot_id").unwrap();
+
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("show")
+            .assert()
+            .success()
+            .stdout("snapshot_id");
+    }
+
+    // #[test]
+    // fn on_snapshot_clone_should_copy_from_snapshot_id() {
+    //     let noisy = &mut Noisy::new().add_config();
+    //
+    //     let folder = noisy.folder();
+    //
+    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
+    //
+    //     // create a snapshots by force
+    //     copy_dir_all(&folder, "./snapshot_id").unwrap();
+    //
+    //     cmd.arg("--config")
+    //         .arg(format!("./{folder}/file.toml"))
+    //         .arg("clone")
+    //         .arg("snapshot_id")
+    //         .arg("-d")
+    //         .arg(folder)
+    //         .assert()
+    //         .success();
+    // }
+
+    #[test]
+    fn on_init_set_default_snapshot_config_on_init() {
         let Noisy { folder, cleanup: _ } = &Noisy::new().add_config();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
@@ -217,7 +268,7 @@ mod tests {
     }
 
     #[test]
-    fn current_config_should_return_correct_default_info() {
+    fn on_config_current_config_should_return_correct_default_info() {
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
 
         let value = cmd
@@ -237,7 +288,7 @@ mod tests {
     }
 
     #[test]
-    fn current_config_should_return_correct_info_after_define_new_config() {
+    fn on_config_current_config_should_return_correct_info_after_define_new_config() {
         let Noisy { folder, cleanup: _ } = &Noisy::new().add_config();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
@@ -264,7 +315,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshots_created_with_success_without_tag() {
+    fn on_snapshot_create_snapshots_created_with_success_without_tag() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
             name: ".setuprsignore".to_string(),
             content: "".to_string(),
@@ -312,7 +363,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshots_should_fail_when_no_setuprsignore() {
+    fn on_snapshot_create_snapshots_should_fail_when_no_setuprsignore() {
         let noisy = &mut Noisy::new().add_config();
         let folder = noisy.folder.clone();
 
@@ -333,7 +384,7 @@ mod tests {
 
     #[test]
     #[serial]
-    fn snapshots_created_with_tag_success() {
+    fn on_snapshot_create_snapshots_created_with_tag_success() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
             name: ".setuprsignore".to_string(),
             content: "".to_string(),
