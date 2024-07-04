@@ -12,7 +12,7 @@ use setuprs::{
 };
 use std::{
     env,
-    fs::File,
+    fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
 };
@@ -37,6 +37,15 @@ async fn main() -> Result<()> {
 
     match &cli.command {
         Some(Commands::Snapshot(SnapshotArgs { command })) => match command {
+            SnapshotOptions::Show => {
+                let snapshots_path = &config.snapshots_path;
+
+                fs::read_dir(snapshots_path)?
+                    .filter_map(|e| e.ok()) // Filter out Err variants
+                    .for_each(|entry| println!("{:?}", entry.file_name()));
+
+                return Ok(());
+            }
             SnapshotOptions::Create { project_path, name } => {
                 if !Path::new(&format!("{project_path}/.setuprsignore")).exists() {
                     return Err(Error::MissingBasicInitialization);
