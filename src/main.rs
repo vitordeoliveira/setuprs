@@ -46,6 +46,25 @@ async fn main() -> Result<()> {
 
                 return Ok(());
             }
+            SnapshotOptions::Clone {
+                snapshot,
+                destination_path,
+            } => {
+                // let snapshot_path = format!(
+                //     "{}{}",
+                //     app.current_config.snapshots_path, selected_snapshot.id
+                // );
+                //
+                // match copy_dir_all(snapshot_path, app.copy_dir_input.clone()) {
+                //     Ok(_) => {
+                //         app.mode = CurrentMode::Exiting;
+                //     }
+                //     Err(e) => {
+                //         app.mode = CurrentMode::Error(e);
+                //     }
+                // };
+            }
+
             SnapshotOptions::Create { project_path, name } => {
                 if !Path::new(&format!("{project_path}/.setuprsignore")).exists() {
                     return Err(Error::MissingBasicInitialization);
@@ -60,8 +79,6 @@ async fn main() -> Result<()> {
 
                 println!("{}", id);
             }
-
-            _ => return Ok(()),
         },
 
         Some(Commands::Config(ConfigArgs { command })) => match command {
