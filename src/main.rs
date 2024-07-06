@@ -40,9 +40,12 @@ async fn main() -> Result<()> {
             SnapshotOptions::Show => {
                 let snapshots_path = &config.snapshots_path;
 
-                fs::read_dir(snapshots_path)?
-                    .filter_map(|e| e.ok()) // Filter out Err variants
-                    .for_each(|entry| println!("{:?}", entry.file_name()));
+                match fs::read_dir(snapshots_path) {
+                    Ok(e) => e
+                        .filter_map(|e| e.ok()) // Filter out Err variants
+                        .for_each(|entry| println!("{:?}", entry.file_name())),
+                    Err(_) => println!("No snapshots on {}", config.snapshots_path),
+                }
 
                 return Ok(());
             }
