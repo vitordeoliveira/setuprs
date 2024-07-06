@@ -89,6 +89,7 @@ mod tests {
     };
 
     use assert_cmd::Command;
+    use predicates::prelude::predicate;
     use serial_test::serial;
     use uuid::Uuid;
 
@@ -129,6 +130,23 @@ mod tests {
             self
         }
 
+        fn add_snapshot_folder_config(self) -> Self {
+            let config = Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: format!("{}/snapshots/", self.folder()),
+            };
+
+            let file = "file.toml".to_string();
+
+            search_file_create_config_folder_if_not_found(
+                format!("./{}/{file}", self.folder).as_str(),
+                &config,
+            )
+            .unwrap();
+            self
+        }
+
         fn add_config(self) -> Self {
             let config = Config {
                 config_file_path: ".".to_string(),
@@ -150,7 +168,7 @@ mod tests {
             self.cleanup = Some(Box::new(closure));
         }
 
-        fn add_folder(self, folder_name: String) -> Self {
+        fn add_folder(self, folder_name: &str) -> Self {
             let path = format!("./{}/{}", self.folder, folder_name);
             fs::create_dir(path).unwrap();
             self
@@ -181,8 +199,8 @@ mod tests {
                 name: "file1".to_string(),
                 content: "".to_string(),
             })
-            .add_folder("folder1".to_string())
-            .add_folder("folder2".to_string())
+            .add_folder("folder1")
+            .add_folder("folder2")
             .add_file(NoisyFile {
                 name: "folder2/file2".to_string(),
                 content: "".to_string(),
@@ -217,14 +235,15 @@ mod tests {
 
     #[test]
     fn on_snapshot_show_should_return_snapshots() {
-        let noisy = &mut Noisy::new().add_config();
+        let noisy = &mut Noisy::new()
+            .add_snapshot_folder_config()
+            .add_folder("snapshots")
+            .add_folder("snapshots/snap_1")
+            .add_folder("snapshots/snap_2");
 
         let folder = noisy.folder();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
-
-        // create a snapshots by force
-        // copy_dir_all(&folder, "./snapshot_id").unwrap();
 
         cmd.arg("--config")
             .arg(format!("./{folder}/file.toml"))
@@ -232,7 +251,24 @@ mod tests {
             .arg("show")
             .assert()
             .success()
-            .stdout("snapshot_id");
+            .stdout(predicates::str::contains("\"snap_1\"\n\"snap_2\""));
+    }
+
+    #[test]
+    fn on_snapshot_show_should_return_empty_when_snapshots_folder_does_not_exist() {
+        let noisy = &mut Noisy::new().add_snapshot_folder_config();
+
+        let folder = noisy.folder();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("show")
+            .assert()
+            .success()
+            .stdout(predicate::str::contains("No snapshots on"));
     }
 
     // #[test]
