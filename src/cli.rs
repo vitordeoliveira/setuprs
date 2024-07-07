@@ -93,10 +93,7 @@ mod tests {
     use serial_test::serial;
     use uuid::Uuid;
 
-    use crate::core::{
-        utils::{copy_dir_all, search_file_create_config_folder_if_not_found},
-        Config,
-    };
+    use crate::core::{utils::search_file_create_config_folder_if_not_found, Config};
 
     #[allow(dead_code)]
     struct Noisy {
@@ -271,26 +268,34 @@ mod tests {
             .stdout(predicate::str::contains("No snapshots on"));
     }
 
-    // #[test]
-    // fn on_snapshot_clone_should_copy_from_snapshot_id() {
-    //     let noisy = &mut Noisy::new().add_config();
-    //
-    //     let folder = noisy.folder();
-    //
-    //     let mut cmd = Command::cargo_bin("setuprs").unwrap();
-    //
-    //     // create a snapshots by force
-    //     copy_dir_all(&folder, "./snapshot_id").unwrap();
-    //
-    //     cmd.arg("--config")
-    //         .arg(format!("./{folder}/file.toml"))
-    //         .arg("clone")
-    //         .arg("snapshot_id")
-    //         .arg("-d")
-    //         .arg(folder)
-    //         .assert()
-    //         .success();
-    // }
+    // TODO: fiz impl & create test for passing a name to the new copied_folder
+    #[test]
+    fn on_snapshot_clone_should_copy_from_snapshot_id() {
+        let noisy = &mut Noisy::new()
+            .add_snapshot_folder_config()
+            .add_folder("snapshots")
+            .add_folder("snapshots/snap_1")
+            .add_file(NoisyFile {
+                name: "snapshots/snap_1/mockfile".to_string(),
+                content: "".to_string(),
+            });
+
+        let folder = noisy.folder();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("clone")
+            .arg("snap_1")
+            .arg("-d")
+            .arg(&folder)
+            .assert()
+            .success();
+
+        assert!(Path::new(&format!("{folder}/snap_1")).exists());
+    }
 
     #[test]
     fn on_init_set_default_snapshot_config_on_init() {
