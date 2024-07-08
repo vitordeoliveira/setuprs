@@ -67,7 +67,7 @@ pub enum SnapshotOptions {
     #[command(arg_required_else_help = true)]
     Clone {
         /// Select snapshot
-        snapshot: String,
+        snapshot_id: String,
 
         /// Define TO here setuprs should clone the snapshot
         #[arg(short, long)]
@@ -268,7 +268,25 @@ mod tests {
             .stdout(predicate::str::contains("No snapshots on"));
     }
 
-    // TODO: fiz impl & create test for passing a name to the new copied_folder
+    #[test]
+    fn on_snapshot_clone_should_return_err_when_snapshot_dont_exist() {
+        let noisy = &mut Noisy::new().add_snapshot_folder_config();
+        let folder = noisy.folder();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("clone")
+            .arg("snap_inexistent")
+            .arg("-d")
+            .arg(format!("{}/clone_snap_1", &folder))
+            .assert()
+            .failure()
+            .stderr(predicate::str::contains("Provided snapshot don\'t exist"));
+    }
+
     #[test]
     fn on_snapshot_clone_should_copy_from_snapshot_id() {
         let noisy = &mut Noisy::new()
@@ -290,11 +308,12 @@ mod tests {
             .arg("clone")
             .arg("snap_1")
             .arg("-d")
-            .arg(&folder)
+            .arg(format!("{}/clone_snap_1", &folder))
             .assert()
-            .success();
+            .success()
+            .stdout(predicate::str::contains("Snapshot created in:"));
 
-        assert!(Path::new(&format!("{folder}/snap_1")).exists());
+        assert!(Path::new(&format!("{folder}/clone_snap_1")).exists());
     }
 
     #[test]
