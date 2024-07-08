@@ -50,22 +50,24 @@ async fn main() -> Result<()> {
                 return Ok(());
             }
             SnapshotOptions::Clone {
-                snapshot,
+                snapshot_id,
                 destination_path,
             } => {
-                // let snapshot_path = format!(
-                //     "{}{}",
-                //     app.current_config.snapshots_path, selected_snapshot.id
-                // );
-                //
-                // match copy_dir_all(snapshot_path, app.copy_dir_input.clone()) {
-                //     Ok(_) => {
-                //         app.mode = CurrentMode::Exiting;
-                //     }
-                //     Err(e) => {
-                //         app.mode = CurrentMode::Error(e);
-                //     }
-                // };
+                let snapshot_path = format!("{}{}", &config.snapshots_path, snapshot_id);
+                let destination_path = destination_path.clone().unwrap_or(".".to_string());
+
+                if !Path::new(&snapshot_path).exists() {
+                    return Err(Error::SnapshotDontExist);
+                };
+
+                match copy_dir_all(snapshot_path, destination_path) {
+                    Ok(v) => {
+                        let path = fs::canonicalize(v)?;
+                        println!("Snapshot created in: {}", path.display());
+                        return Ok(());
+                    }
+                    Err(e) => return Err(e),
+                };
             }
 
             SnapshotOptions::Create { project_path, name } => {
