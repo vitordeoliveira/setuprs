@@ -14,6 +14,9 @@ pub enum Error {
 
     #[error("{0}")]
     IOError(#[from] io::Error),
+
+    #[error("Provided snapshot don't exist")]
+    SnapshotDontExist,
 }
 
 impl Debug for Error {
