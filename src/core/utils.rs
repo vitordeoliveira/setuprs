@@ -105,7 +105,7 @@ fn set_value(new_value: Vec<Pattern>) {
     }
 }
 
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<()> {
+pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<String> {
     fs::create_dir_all(&dst)?;
 
     for entry in fs::read_dir(&src)? {
@@ -123,7 +123,7 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<()> 
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
         }
     }
-    Ok(())
+    Ok(dst.as_ref().display().to_string())
 }
 
 #[cfg(test)]
