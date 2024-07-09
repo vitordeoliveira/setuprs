@@ -248,7 +248,7 @@ mod tests {
             .arg("show")
             .assert()
             .success()
-            .stdout(predicates::str::contains("\"snap_1\"\n\"snap_2\""));
+            .stdout(predicates::str::contains("\"snap_2\"\n\"snap_1\""));
     }
 
     #[test]
