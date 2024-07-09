@@ -231,7 +231,7 @@ mod tests {
     }
 
     #[test]
-    fn on_snapshot_show_should_return_snapshots() {
+    fn on_snapshot_show_should_return_snapshots_alphabetcly() {
         let noisy = &mut Noisy::new()
             .add_snapshot_folder_config()
             .add_folder("snapshots")
@@ -248,7 +248,7 @@ mod tests {
             .arg("show")
             .assert()
             .success()
-            .stdout(predicates::str::contains("\"snap_2\"\n\"snap_1\""));
+            .stdout(predicates::str::contains("snap_1\nsnap_2"));
     }
 
     #[test]

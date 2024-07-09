@@ -41,9 +41,19 @@ async fn main() -> Result<()> {
                 let snapshots_path = &config.snapshots_path;
 
                 match fs::read_dir(snapshots_path) {
-                    Ok(e) => e
-                        .filter_map(|e| e.ok()) // Filter out Err variants
-                        .for_each(|entry| println!("{:?}", entry.file_name())),
+                    Ok(e) => {
+                        let mut list: Vec<String> = e
+                            .filter_map(|e| {
+                                e.ok().and_then(|entry| {
+                                    entry.file_name().to_str().map(|s| s.to_string())
+                                })
+                            })
+                            .collect();
+
+                        list.sort();
+
+                        list.iter().for_each(|file| println!("{file}"));
+                    }
                     Err(_) => println!("No snapshots on {}", config.snapshots_path),
                 }
 
