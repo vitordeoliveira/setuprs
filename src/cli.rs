@@ -321,10 +321,12 @@ mod tests {
         let Noisy { folder, cleanup: _ } = &Noisy::new().add_config();
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
-        let path = format!("./{folder}/.setuprsignore");
+        let path_ignore = format!("./{folder}/.setuprsignore");
+        let path_config = format!("./{folder}/.setuprs.toml");
 
         cmd.arg("init").arg("-d").arg(folder).assert().success();
-        assert!(Path::new(&path).exists());
+        assert!(Path::new(&path_ignore).exists());
+        assert!(Path::new(&path_config).exists());
     }
 
     #[test]
