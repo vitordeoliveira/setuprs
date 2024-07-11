@@ -83,12 +83,12 @@ pub enum SnapshotOptions {
 mod tests {
     use std::{
         fs::{self, File},
-        io::Write,
+        io::{Read, Write},
         path::Path,
         str::FromStr,
     };
 
-    use assert_cmd::Command;
+    use assert_cmd::{assert, Command};
     use predicates::prelude::predicate;
     use serial_test::serial;
     use uuid::Uuid;
@@ -322,11 +322,26 @@ mod tests {
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
         let path_ignore = format!("./{folder}/.setuprsignore");
-        let path_config = format!("./{folder}/.setuprs.toml");
+        let path_config = format!("./{folder}/setuprs.toml");
 
-        cmd.arg("init").arg("-d").arg(folder).assert().success();
+        cmd.arg("init")
+            .arg("-d")
+            .arg(folder)
+            .write_stdin("project_name")
+            .assert()
+            .success();
+
+        let mut file = File::open(&path_config).expect("Unable to open the file");
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)
+            .expect("Unable to read the file");
+
         assert!(Path::new(&path_ignore).exists());
         assert!(Path::new(&path_config).exists());
+        assert_eq!(
+            contents,
+            "[project]\nproject_name = \"project_name\"".to_string()
+        );
     }
 
     #[test]
