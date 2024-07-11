@@ -1,5 +1,10 @@
 use glob::Pattern;
-use std::{env, fs, io::Write, path::Path, sync::Mutex};
+use std::{
+    env, fs,
+    io::{BufRead, Write},
+    path::Path,
+    sync::Mutex,
+};
 
 use crate::error::Result;
 
@@ -41,6 +46,23 @@ pub fn search_file_create_config_folder_if_not_found(
     }
 
     Ok(response)
+}
+
+pub fn get_input<R, W>(mut reader: R, mut writer: W, question: &str) -> String
+where
+    R: BufRead,
+    W: Write,
+{
+    write!(&mut writer, "{}", question).expect("Unable to write");
+
+    match writer.flush() {
+        Ok(_) => {}
+        Err(_) => println!(),
+    }
+    let mut s = String::new();
+    reader.read_line(&mut s).expect("Unable to read");
+
+    s.trim().to_string()
 }
 
 pub fn confirm_selection() {
@@ -146,7 +168,7 @@ mod tests {
         Config,
     };
 
-    use super::SETUPRSIGNORE;
+    use super::{get_input, SETUPRSIGNORE};
 
     #[allow(dead_code)]
     struct Noisy {
@@ -208,6 +230,17 @@ mod tests {
     fn set_value(new_value: Option<Vec<Pattern>>) {
         let mut setup = SETUPRSIGNORE.lock().unwrap();
         *setup = new_value;
+    }
+
+    #[test]
+    fn get_input_should_return_the_correct_input_when_called() {
+        let input = b"I'm George";
+        let mut output = Vec::new();
+        let answer = get_input(&input[..], &mut output, "Who goes there?");
+
+        let output = String::from_utf8(output).expect("Not UTF-8");
+        assert_eq!("Who goes there?", output);
+        assert_eq!("I'm George", answer);
     }
 
     #[test]
