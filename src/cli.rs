@@ -88,7 +88,7 @@ mod tests {
         str::FromStr,
     };
 
-    use assert_cmd::{assert, Command};
+    use assert_cmd::Command;
     use predicates::prelude::predicate;
     use serial_test::serial;
     use uuid::Uuid;
