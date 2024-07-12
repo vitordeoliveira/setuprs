@@ -338,10 +338,7 @@ mod tests {
 
         assert!(Path::new(&path_ignore).exists());
         assert!(Path::new(&path_config).exists());
-        assert_eq!(
-            contents,
-            "[project]\nproject_name = \"project_name\"".to_string()
-        );
+        assert_eq!(contents, "[project]\nname = \"project_name\"".to_string());
     }
 
     #[test]
