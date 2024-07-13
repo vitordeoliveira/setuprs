@@ -83,7 +83,7 @@ pub enum SnapshotOptions {
 mod tests {
     use std::{
         fs::{self, File},
-        io::{Read, Write},
+        io::Write,
         path::Path,
         str::FromStr,
     };
@@ -188,6 +188,10 @@ mod tests {
     fn on_snapshot_create_should_ignore_files_and_folders_on_setuprsignore() {
         let noisy = &mut Noisy::new()
             .add_config()
+            .add_file(NoisyFile {
+                name: "setuprs.toml".to_string(),
+                content: "[project]\nname=\"project\"".to_string(),
+            })
             .add_file(NoisyFile {
                 name: ".setuprsignore".to_string(),
                 content: "file1\nfolder1\nfolder2/file2".to_string(),
@@ -331,14 +335,11 @@ mod tests {
             .assert()
             .success();
 
-        let mut file = File::open(&path_config).expect("Unable to open the file");
-        let mut contents = String::new();
-        file.read_to_string(&mut contents)
-            .expect("Unable to read the file");
+        let content = fs::read_to_string(&path_config).unwrap();
 
         assert!(Path::new(&path_ignore).exists());
         assert!(Path::new(&path_config).exists());
-        assert_eq!(contents, "[project]\nname = \"project_name\"".to_string());
+        assert_eq!(content, "[project]\nname = \"project_name\"".to_string());
     }
 
     #[test]
@@ -389,9 +390,58 @@ mod tests {
     }
 
     #[test]
-    fn on_snapshot_create_snapshots_created_with_success_without_tag() {
+    fn on_snapshot_create_should_create_snapshot_with_setuprs_toml_project_name() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
-            name: ".setuprsignore".to_string(),
+            name: "setuprs.toml".to_string(),
+            content: "[project]\nname=\"project\"".to_string(),
+        });
+        let folder = &noisy.folder;
+        let file = "file.toml".to_string();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        let value = cmd
+            .arg("--config")
+            .arg(format!("./{folder}/{file}"))
+            .arg("snapshot")
+            .arg("create")
+            .arg(format!("./{folder}"))
+            .assert()
+            .get_output()
+            .clone();
+
+        let binding = String::from_utf8(value.stdout).unwrap();
+        let snapshot_file = binding
+            .lines()
+            .next()
+            .expect("No second line found")
+            .to_string();
+
+        let snapshot_file_clone = snapshot_file.clone();
+
+        noisy.overwrite_cleanup(Box::new(move || {
+            fs::remove_dir_all(&snapshot_file_clone).unwrap();
+        }));
+
+        let read_copied_file: String =
+            fs::read_to_string(format!("./{snapshot_file}/{file}")).unwrap();
+
+        let config: Config = toml::from_str(&read_copied_file).unwrap();
+
+        assert_eq!(
+            config,
+            Config {
+                config_file_path: ".".to_string(),
+                debug_mode: "error".to_string(),
+                snapshots_path: ".".to_string()
+            }
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn on_snapshot_create_panics_if_has_not_tag_or_setuprs_toml() {
+        let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
+            name: "setuprs.toml".to_string(),
             content: "".to_string(),
         });
         let folder = &noisy.folder;
@@ -460,7 +510,7 @@ mod tests {
     #[serial]
     fn on_snapshot_create_snapshots_created_with_tag_success() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
-            name: ".setuprsignore".to_string(),
+            name: "setuprs.toml".to_string(),
             content: "".to_string(),
         });
         let folder = noisy.folder.clone();
