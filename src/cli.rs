@@ -27,6 +27,7 @@ pub enum Commands {
         dir: Option<String>,
     },
 
+    #[clap(hide = true)]
     /// Run terminal-user-interface
     Tui {},
 }
@@ -557,7 +558,6 @@ Commands:
   snapshot  Snapshot commands
   config    Configuration options
   init      Prepare folder to create a snapshot
-  tui       Run terminal-user-interface
   help      Print this message or the help of the given subcommand(s)
 
 Options:
