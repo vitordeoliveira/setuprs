@@ -82,17 +82,15 @@ impl FromStr for Config {
             snapshots_path: snapshot_path.unwrap(),
             debug_mode: debug_mode.unwrap(),
         })
-
-        // if let (Some(config_file_path), Some(snapshots_path), Some(debug_mode)) =
-        //     (config_file_path, snapshot_path, debug_mode)
-        // {
-        //     Ok(Config {
-        //         config_file_path,
-        //         snapshots_path,
-        //         debug_mode,
-        //     })
-        // } else {
-        //     Err(ParseConfigError)
-        // }
     }
+}
+
+#[derive(PartialEq, Deserialize, Debug)]
+pub struct SetuprsConfig {
+    pub project: Project,
+}
+
+#[derive(PartialEq, Deserialize, Debug)]
+pub struct Project {
+    pub name: String,
 }
