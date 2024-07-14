@@ -3,9 +3,10 @@ use setuprs::{
     cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions},
     core::{
         utils::{
-            copy_dir_all, get_all_snapshot_ids, search_file_create_config_folder_if_not_found,
+            copy_dir_all, get_all_snapshot_ids, get_input,
+            search_file_create_config_folder_if_not_found,
         },
-        Config,
+        Config, SetuprsConfig,
     },
     error::{Error, Result},
     tui::app::{App, ObjList},
@@ -13,7 +14,7 @@ use setuprs::{
 use std::{
     env,
     fs::{self, File},
-    io::Write,
+    io::{self, Write},
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
@@ -81,13 +82,22 @@ async fn main() -> Result<()> {
             }
 
             SnapshotOptions::Create { project_path, name } => {
-                if !Path::new(&format!("{project_path}/.setuprsignore")).exists() {
+                if !Path::new(&format!("{project_path}/setuprs.toml")).exists() {
                     return Err(Error::MissingBasicInitialization);
                 };
 
                 let id = match name {
                     Some(tag_value) => tag_value.to_string(),
-                    None => Uuid::new_v4().to_string(),
+                    None => {
+                        let setuprs_config_file_path = format!("{project_path}/setuprs.toml");
+                        let content = fs::read_to_string(setuprs_config_file_path)?;
+                        let setuprs_config_data = toml::from_str::<SetuprsConfig>(&content)?;
+
+                        match setuprs_config_data.project {
+                            Some(project) => project.name,
+                            _ => Uuid::new_v4().to_string(),
+                        }
+                    }
                 };
 
                 copy_dir_all(project_path, format!("{}/{}", &config.snapshots_path, id))?;
@@ -113,13 +123,32 @@ async fn main() -> Result<()> {
                         .to_string()
                 }
             };
-            let mut file_path = PathBuf::from(&current_dir);
-            file_path.push(".setuprsignore");
 
-            let mut file = File::create(&file_path).expect("Failed to create .setuprsignore file");
-
+            let mut file_ignore_path = PathBuf::from(&current_dir);
+            file_ignore_path.push(".setuprsignore");
+            let mut file =
+                File::create(&file_ignore_path).expect("Failed to create .setuprsignore file");
             file.write_all(b".git\nsnapshots/")
                 .expect("Failed to write on .setuprsignore file");
+
+            let stdio = io::stdin();
+            let input = stdio.lock();
+            let output = io::stdout();
+            let project_name = get_input(input, output, "Please inform the project name:");
+            let mut file_setuprs_toml = PathBuf::from(&current_dir);
+            file_setuprs_toml.push("setuprs.toml");
+            let mut file =
+                File::create(&file_setuprs_toml).expect("Failed to create setuprs.toml file");
+
+            let content = format!(
+                "[project]
+name = \"{project_name}\"\n
+#[[variables]]
+#name=\"variable_name\"
+#default=\"variable_default_value\""
+            );
+            file.write_all(content.as_bytes())
+                .expect("Failed to write on setuprs.toml file");
         }
 
         Some(Commands::Tui {}) => {
