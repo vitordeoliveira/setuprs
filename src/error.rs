@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::io;
 use thiserror::Error;
-use tokio::sync::broadcast::error;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
