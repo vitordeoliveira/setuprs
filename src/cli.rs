@@ -340,7 +340,15 @@ mod tests {
 
         assert!(Path::new(&path_ignore).exists());
         assert!(Path::new(&path_config).exists());
-        assert_eq!(content, "[project]\nname = \"project_name\"".to_string());
+
+        let expected = "[project]
+name = \"project_name\"\n
+#[[variables]]
+#name=\"variable_name\"
+#default=\"variable_default_value\""
+            .to_string();
+
+        assert_eq!(content, expected);
     }
 
     #[test]
@@ -439,8 +447,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn on_snapshot_create_panics_if_has_not_tag_or_setuprs_toml() {
+    fn on_snapshot_create_should_create_snapshot_with_uuid() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
             name: "setuprs.toml".to_string(),
             content: "".to_string(),
