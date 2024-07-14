@@ -102,9 +102,9 @@ mod tests {
         cleanup: Option<Box<dyn Fn()>>,
     }
 
-    struct NoisyFile {
-        name: String,
-        content: String,
+    struct NoisyFile<'a> {
+        name: &'a str,
+        content: &'a str,
     }
 
     impl Noisy {
@@ -190,22 +190,22 @@ mod tests {
         let noisy = &mut Noisy::new()
             .add_config()
             .add_file(NoisyFile {
-                name: "setuprs.toml".to_string(),
-                content: "[project]\nname=\"project\"".to_string(),
+                name: "setuprs.toml",
+                content: "[project]\nname=\"project\"",
             })
             .add_file(NoisyFile {
-                name: ".setuprsignore".to_string(),
-                content: "file1\nfolder1\nfolder2/file2".to_string(),
+                name: ".setuprsignore",
+                content: "file1\nfolder1\nfolder2/file2",
             })
             .add_file(NoisyFile {
-                name: "file1".to_string(),
-                content: "".to_string(),
+                name: "file1",
+                content: "",
             })
             .add_folder("folder1")
             .add_folder("folder2")
             .add_file(NoisyFile {
-                name: "folder2/file2".to_string(),
-                content: "".to_string(),
+                name: "folder2/file2",
+                content: "",
             });
 
         let folder = noisy.folder.clone();
@@ -299,8 +299,8 @@ mod tests {
             .add_folder("snapshots")
             .add_folder("snapshots/snap_1")
             .add_file(NoisyFile {
-                name: "snapshots/snap_1/mockfile".to_string(),
-                content: "".to_string(),
+                name: "snapshots/snap_1/mockfile",
+                content: "",
             });
 
         let folder = noisy.folder();
@@ -319,6 +319,57 @@ mod tests {
             .stdout(predicate::str::contains("Snapshot created in:"));
 
         assert!(Path::new(&format!("{folder}/clone_snap_1")).exists());
+    }
+
+    #[test]
+    fn on_snapshot_clone_snapshots_should_create_and_replace_variables() {
+        let noisy = &mut Noisy::new()
+            .add_snapshot_folder_config()
+            .add_folder("snapshots")
+            .add_folder("snapshots/snap_1")
+            .add_file(NoisyFile {
+                name: "snapshots/snap_1/setuprs.toml",
+                content: "[[variables]]\nvar0 = \"value0\"\nvar1 = \"value1\"",
+            })
+            .add_file(NoisyFile {
+                name: "snapshots/snap_1/replaced_file_0.txt",
+                content: "this value should be replaced -> var0 = {{ var0 }}",
+            })
+            .add_file(NoisyFile {
+                name: "snapshots/snap_1/replaced_file_1.txt",
+                content: "this value should be replaced -> var1 = {{ var1 }}",
+            });
+
+        let folder = noisy.folder.clone();
+
+        let mut cmd = Command::cargo_bin("setuprs").unwrap();
+        cmd.arg("--config")
+            .arg(format!("./{folder}/file.toml"))
+            .arg("snapshot")
+            .arg("clone")
+            .arg("snap_1")
+            .arg("-d")
+            .arg(format!("{}/clone_snap_1", &folder))
+            .assert()
+            .success()
+            .stdout(predicate::str::contains("Snapshot created in:"));
+
+        assert!(Path::new(&format!("{folder}/clone_snap_1")).exists());
+
+        let read_snap_1_replaced_file_0: String =
+            fs::read_to_string(format!("{folder}/clone_snap_1/replaced_file_0.txt")).unwrap();
+
+        let read_snap_1_replaced_file_1: String =
+            fs::read_to_string(format!("{folder}/clone_snap_1/replaced_file_1.txt")).unwrap();
+
+        assert_eq!(
+            "this value should be replaced -> var0 = value0",
+            read_snap_1_replaced_file_0
+        );
+        assert_eq!(
+            "this value should be replaced -> var1 = value1",
+            read_snap_1_replaced_file_1
+        );
     }
 
     #[test]
@@ -401,11 +452,11 @@ name = \"project_name\"\n
     #[test]
     fn on_snapshot_create_should_create_snapshot_with_setuprs_toml_project_name() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
-            name: "setuprs.toml".to_string(),
-            content: "[project]\nname=\"project\"".to_string(),
+            name: "setuprs.toml",
+            content: "[project]\nname=\"project\"",
         });
         let folder = &noisy.folder;
-        let file = "file.toml".to_string();
+        let file = "file.toml";
 
         let mut cmd = Command::cargo_bin("setuprs").unwrap();
         let value = cmd
@@ -449,8 +500,8 @@ name = \"project_name\"\n
     #[test]
     fn on_snapshot_create_should_create_snapshot_with_uuid() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
-            name: "setuprs.toml".to_string(),
-            content: "".to_string(),
+            name: "setuprs.toml",
+            content: "",
         });
         let folder = &noisy.folder;
         let file = "file.toml".to_string();
@@ -518,8 +569,8 @@ name = \"project_name\"\n
     #[serial]
     fn on_snapshot_create_snapshots_created_with_tag_success() {
         let noisy = &mut Noisy::new().add_config().add_file(NoisyFile {
-            name: "setuprs.toml".to_string(),
-            content: "".to_string(),
+            name: "setuprs.toml",
+            content: "",
         });
         let folder = noisy.folder.clone();
 
