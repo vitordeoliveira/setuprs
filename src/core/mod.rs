@@ -87,10 +87,17 @@ impl FromStr for Config {
 
 #[derive(PartialEq, Deserialize, Debug)]
 pub struct SetuprsConfig {
-    pub project: Project,
+    pub project: Option<Project>,
+    pub variables: Option<Vec<Variables>>,
 }
 
 #[derive(PartialEq, Deserialize, Debug)]
 pub struct Project {
     pub name: String,
+}
+
+#[derive(PartialEq, Deserialize, Debug)]
+pub struct Variables {
+    pub name: String,
+    pub default: Option<String>,
 }
