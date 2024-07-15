@@ -38,7 +38,7 @@ impl<'a> Confirming<'a> {
                         app.current_config.snapshots_path, selected_snapshot.id
                     );
 
-                    match copy_dir_all(snapshot_path, app.copy_dir_input.clone()) {
+                    match copy_dir_all(snapshot_path, app.copy_dir_input.clone(), &None) {
                         Ok(_) => {
                             app.mode = CurrentMode::Exiting;
                         }
