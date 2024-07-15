@@ -79,13 +79,14 @@ async fn main() -> Result<()> {
                 } else {
                     vec![]
                 };
+                let expensive_closure = |s: String| {
+                    println!("from closure : {s}");
+                };
 
                 match copy_dir_all(
                     snapshot_path,
                     destination_path,
-                    &Some(Box::new(|s| {
-                        println!("from closure : {s}");
-                    })),
+                    &Some(Box::new(expensive_closure)),
                 ) {
                     Ok(v) => {
                         let path = fs::canonicalize(v)?;
