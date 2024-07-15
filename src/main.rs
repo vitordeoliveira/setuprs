@@ -71,7 +71,22 @@ async fn main() -> Result<()> {
                     return Err(Error::SnapshotDontExist);
                 };
 
-                match copy_dir_all(snapshot_path, destination_path) {
+                let setuprsconfig_path = format!("{}/setuprs.toml", snapshot_path);
+
+                let _a = if Path::new(&setuprsconfig_path).exists() {
+                    let setuprsconfig = toml::from_str::<SetuprsConfig>(&setuprsconfig_path)?;
+                    setuprsconfig.variables.unwrap_or_default()
+                } else {
+                    vec![]
+                };
+
+                match copy_dir_all(
+                    snapshot_path,
+                    destination_path,
+                    &Some(Box::new(|s| {
+                        println!("from closure : {s}");
+                    })),
+                ) {
                     Ok(v) => {
                         let path = fs::canonicalize(v)?;
                         println!("Snapshot created in: {}", path.display());
@@ -100,7 +115,11 @@ async fn main() -> Result<()> {
                     }
                 };
 
-                copy_dir_all(project_path, format!("{}/{}", &config.snapshots_path, id))?;
+                copy_dir_all(
+                    project_path,
+                    format!("{}/{}", &config.snapshots_path, id),
+                    &None,
+                )?;
 
                 println!("{}", id);
             }
