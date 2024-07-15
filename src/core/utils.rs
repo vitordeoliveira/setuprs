@@ -127,7 +127,13 @@ fn set_value(new_value: Vec<Pattern>) {
     }
 }
 
-pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<String> {
+// type Callback = fn(String) -> Result<()>;
+
+pub fn copy_dir_all(
+    src: impl AsRef<Path>,
+    dst: impl AsRef<Path>,
+    file_modifier: &Option<Box<dyn Fn(String) + 'static>>,
+) -> Result<String> {
     fs::create_dir_all(&dst)?;
 
     for entry in fs::read_dir(&src)? {
@@ -140,9 +146,18 @@ pub fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> Result<Stri
         }
 
         if ty.is_dir() {
-            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+            copy_dir_all(
+                entry.path(),
+                dst.as_ref().join(entry.file_name()),
+                file_modifier,
+            )?;
         } else {
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+
+            let name = entry.file_name().to_str().unwrap().to_string();
+            if let Some(modifier) = file_modifier {
+                modifier(name);
+            }
         }
     }
     Ok(dst.as_ref().display().to_string())
@@ -195,6 +210,7 @@ mod tests {
         fn add_folder(self, folder_name: String) -> Self {
             let path = format!("./{}/{}", self.folder, folder_name);
             fs::create_dir(path).unwrap();
+
             self
         }
 
@@ -329,7 +345,7 @@ mod tests {
         )
         .unwrap();
 
-        copy_dir_all(folder, "./test_folder_copy").unwrap();
+        copy_dir_all(folder, "./test_folder_copy", &None).unwrap();
 
         let file: String = fs::read_to_string(format!("./test_folder_copy/{file}")).unwrap();
         assert_eq!(
@@ -374,7 +390,7 @@ mod tests {
         }));
 
         set_value(None);
-        copy_dir_all(folder, "./test_folder_copy").unwrap();
+        copy_dir_all(folder, "./test_folder_copy", &None).unwrap();
 
         let on_folder = |file: &str| -> String { format!("./test_folder_copy/{file}") };
 
