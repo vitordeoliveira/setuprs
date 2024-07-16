@@ -152,6 +152,7 @@ pub fn copy_dir_all(
                 file_modifier,
             )?;
         } else {
+            // TODO: instead of copy, load in memory, replace and create file with new content
             fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
 
             let name = entry.file_name().to_str().unwrap().to_string();
