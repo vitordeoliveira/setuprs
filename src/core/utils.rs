@@ -127,12 +127,12 @@ fn set_value(new_value: Vec<Pattern>) {
     }
 }
 
-// type Callback = fn(String) -> Result<()>;
+type FileModifier = Option<Box<dyn Fn(&mut String) + 'static>>;
 
 pub fn copy_dir_all(
     src: impl AsRef<Path>,
     dst: impl AsRef<Path>,
-    file_modifier: &Option<Box<dyn Fn(String) + 'static>>,
+    file_modifier: &FileModifier,
 ) -> Result<String> {
     fs::create_dir_all(&dst)?;
 
@@ -153,12 +153,17 @@ pub fn copy_dir_all(
             )?;
         } else {
             // TODO: instead of copy, load in memory, replace and create file with new content
-            fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+            let mut file_content = fs::read_to_string(entry.path())?;
 
-            let name = entry.file_name().to_str().unwrap().to_string();
+            // fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+
             if let Some(modifier) = file_modifier {
-                modifier(name);
+                modifier(&mut file_content);
             }
+
+            let mut copied_file = fs::File::create(dst.as_ref().join(entry.file_name()))?;
+
+            copied_file.write_all(file_content.as_bytes())?;
         }
     }
     Ok(dst.as_ref().display().to_string())
