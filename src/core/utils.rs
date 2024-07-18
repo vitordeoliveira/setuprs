@@ -127,7 +127,7 @@ fn set_value(new_value: Vec<Pattern>) {
     }
 }
 
-type FileModifier = Option<Box<dyn Fn(&mut String) + 'static>>;
+type FileModifier = Option<Box<dyn Fn(&mut String) -> String + 'static>>;
 
 pub fn copy_dir_all(
     src: impl AsRef<Path>,
@@ -158,7 +158,7 @@ pub fn copy_dir_all(
             // fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
 
             if let Some(modifier) = file_modifier {
-                modifier(&mut file_content);
+                file_content = modifier(&mut file_content);
             }
 
             let mut copied_file = fs::File::create(dst.as_ref().join(entry.file_name()))?;
