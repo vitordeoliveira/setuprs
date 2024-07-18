@@ -87,7 +87,7 @@ impl FromStr for Config {
 
 #[derive(PartialEq, Deserialize, Debug)]
 pub struct SetuprsConfig {
-    pub project: Project,
+    pub project: Option<Project>,
     pub variables: Option<Vec<Variables>>,
 }
 
@@ -100,6 +100,16 @@ pub struct Project {
 pub struct Variables {
     pub name: String,
     pub default: Option<String>,
+}
+
+#[test]
+fn toml_should_parse_setup_config_when_project_is_not_declared() {
+    let setuprs_toml = "[[variables]]
+name=\"var1\"
+default=\"variable_default_value\"
+[[variables]]
+name=\"var2\"";
+    toml::from_str::<SetuprsConfig>(setuprs_toml).unwrap();
 }
 
 #[test]
