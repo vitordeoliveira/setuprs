@@ -329,15 +329,21 @@ mod tests {
             .add_folder("snapshots/snap_1")
             .add_file(NoisyFile {
                 name: "snapshots/snap_1/setuprs.toml",
-                content: "[[variables]]\nvar0 = \"value0\"\nvar1 = \"value1\"",
+                content: "[project]
+name = 'snap_1'
+[[variables]]
+name = 'var0'
+[[variables]]
+name = 'var1'
+default = 'value1'",
             })
             .add_file(NoisyFile {
                 name: "snapshots/snap_1/replaced_file_0.txt",
-                content: "this value should be replaced -> var0 = {{ var0 }}",
+                content: "this value should be replaced -> var0 = {{var0}}",
             })
             .add_file(NoisyFile {
                 name: "snapshots/snap_1/replaced_file_1.txt",
-                content: "this value should be replaced -> var1 = {{ var1 }}",
+                content: "this value should be replaced -> var1 = {{var1}}",
             });
 
         let folder = noisy.folder.clone();
@@ -350,6 +356,7 @@ mod tests {
             .arg("snap_1")
             .arg("-d")
             .arg(format!("{}/clone_snap_1", &folder))
+            .write_stdin("value0")
             .assert()
             .success()
             .stdout(predicate::str::contains("Snapshot created in:"));
