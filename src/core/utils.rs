@@ -155,8 +155,6 @@ pub fn copy_dir_all(
             // TODO: instead of copy, load in memory, replace and create file with new content
             let mut file_content = fs::read_to_string(entry.path())?;
 
-            // fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
-
             if let Some(modifier) = file_modifier {
                 file_content = modifier(&mut file_content);
             }
