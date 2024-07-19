@@ -12,6 +12,7 @@ use setuprs::{
     tui::app::{App, ObjList},
 };
 use std::{
+    collections::HashMap,
     env,
     fs::{self, File},
     io::{self, Write},
@@ -73,21 +74,53 @@ async fn main() -> Result<()> {
 
                 let setuprsconfig_path = format!("{}/setuprs.toml", snapshot_path);
 
-                let _a = if Path::new(&setuprsconfig_path).exists() {
-                    let setuprsconfig = toml::from_str::<SetuprsConfig>(&setuprsconfig_path)?;
+                let variables = if Path::new(&setuprsconfig_path).exists() {
+                    let content = fs::read_to_string(&setuprsconfig_path)?;
+                    let setuprsconfig = toml::from_str::<SetuprsConfig>(&content)?;
                     setuprsconfig.variables.unwrap_or_default()
                 } else {
                     vec![]
                 };
-                let expensive_closure = |s: String| {
-                    println!("from closure : {s}");
+
+                let mut answers_map: HashMap<String, String> = HashMap::new();
+
+                for var in variables {
+                    let stdio = io::stdin();
+                    let input = stdio.lock();
+                    let output = io::stdout();
+
+                    let provided_value = if let Some(default_value) = var.default {
+                        let question = format!(
+                            "please inform the {} (default: {}): ",
+                            var.name, default_value
+                        );
+
+                        let input_value = get_input(input, output, &question);
+
+                        if input_value.trim().is_empty() {
+                            default_value
+                        } else {
+                            input_value.trim().to_string()
+                        }
+                    } else {
+                        let question = format!("please inform the {}: ", var.name);
+                        get_input(input, output, &question)
+                    };
+
+                    answers_map.insert(var.name, provided_value);
+                }
+
+                let modifier = move |s: &mut String| {
+                    let mut new_content = s.clone();
+
+                    for (key, val) in answers_map.iter() {
+                        new_content = new_content.replace(&format!("{{{{{key}}}}}"), val);
+                    }
+
+                    new_content
                 };
 
-                match copy_dir_all(
-                    snapshot_path,
-                    destination_path,
-                    &Some(Box::new(expensive_closure)),
-                ) {
+                match copy_dir_all(snapshot_path, destination_path, &Some(Box::new(modifier))) {
                     Ok(v) => {
                         let path = fs::canonicalize(v)?;
                         println!("Snapshot created in: {}", path.display());
