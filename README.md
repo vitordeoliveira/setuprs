@@ -11,18 +11,37 @@ scaffolds of snapshots, streamlining project setup and management.
 - **Easy Snapshot Creation**: Quickly generate snapshots of your projects.
 - **Effortless Cloning**: Seamlessly clone the scaffolds of your project snapshots.
 - **Intuitive CLI**: Simple and efficient command-line operations using `clap.rs`.
-- **Interactive TUI**: User-friendly text interface powered by `ratatui.rs`.
+- **Interactive TUI**: User-friendly text interface powered by `ratatui.rs`. (in beta)
 
 ## Installation
 
-Is not done yet, not possible to install
+It is not done yet, not possible to install
 
 if you want to test the beta of the beta just clone and run
 
-```sh
-# to create a snapshot of your current dir
-cargo run -- -snapshot .
+## Usage
 
-# to run the tui
-cargo run
+### CLI Commands
+```sh
+Usage: setuprs [OPTIONS] [COMMAND]
+
+Commands:
+  snapshot  Snapshot commands
+  config    Configuration options
+  init      Prepare folder to create a snapshot
+  help      Print this message or the help of the given subcommand(s)
+
+Options:
+  -c, --config <TOML FILE>  Sets a custom config file
+  -h, --help                Print help
+  -V, --version             Print version
+
+# to initialize the folder that will be a snapshot
+setuprs snapshot init
+
+# to create a snapshot of your current dir
+setuprs snapshot create
+
+# to clone a snapshot of your current dir
+setuprs snapshot clone <snapshot_name_tag> -d <path_to_clone>
 ```
