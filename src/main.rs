@@ -89,22 +89,25 @@ async fn main() -> Result<()> {
                     let input = stdio.lock();
                     let output = io::stdout();
 
-                    let provided_value = if let Some(default_value) = var.default {
-                        let question = format!(
-                            "please inform the {} (default: {}): ",
-                            var.name, default_value
-                        );
+                    let provided_value = match var.default {
+                        Some(default_value) => {
+                            let question = format!(
+                                "please inform the {} (default: {}): ",
+                                var.name, default_value
+                            );
 
-                        let input_value = get_input(input, output, &question);
+                            let input_value = get_input(input, output, &question);
 
-                        if input_value.trim().is_empty() {
-                            default_value
-                        } else {
-                            input_value.trim().to_string()
+                            match input_value.trim().is_empty() {
+                                true => default_value,
+                                false => input_value.trim().to_string(),
+                            }
                         }
-                    } else {
-                        let question = format!("please inform the {}: ", var.name);
-                        get_input(input, output, &question)
+
+                        None => {
+                            let question = format!("please inform the {}: ", var.name);
+                            get_input(input, output, &question)
+                        }
                     };
 
                     answers_map.insert(var.name, provided_value);
