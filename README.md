@@ -1,5 +1,17 @@
 # setuprs
 
+<!--toc:start-->
+- [setuprs](#setuprs)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [CLI Commands](#cli-commands)
+    - [Setting Variables](#setting-variables)
+      - [Using Variables in Templates](#using-variables-in-templates)
+    - [Filling Variable Values](#filling-variable-values)
+      - [Example Workflow](#example-workflow)
+<!--toc:end-->
+
 `setuprs` is a powerful command-line interface (CLI) and text user interface
 (TUI) application designed to simplify and accelerate the process of creating
 snapshots of projects. By leveraging `clap.rs` for CLI functionality and
@@ -11,7 +23,8 @@ scaffolds of snapshots, streamlining project setup and management.
 - **Easy Snapshot Creation**: Quickly generate snapshots of your projects.
 - **Effortless Cloning**: Seamlessly clone the scaffolds of your project snapshots.
 - **Intuitive CLI**: Simple and efficient command-line operations using `clap.rs`.
-- **Interactive TUI**: User-friendly text interface powered by `ratatui.rs`. (in beta)
+- **Interactive TUI**: User-friendly text interface powered by `ratatui.rs`.
+(in beta)
 
 ## Installation
 
@@ -22,6 +35,7 @@ if you want to test the beta of the beta just clone and run
 ## Usage
 
 ### CLI Commands
+
 ```sh
 Usage: setuprs [OPTIONS] [COMMAND]
 
@@ -48,9 +62,11 @@ setuprs snapshot clone <snapshot_name_tag> -d <path_to_clone>
 
 ### Setting Variables
 
-`setuprs` allows you to define variables in a `setuprs.toml` file. This makes it easy to customize your project templates. Define your variables as follows:
+`setuprs` allows you to define variables in a `setuprs.toml` file. This makes
+it easy to customize your project templates. Define your variables as follows:
 
 For example:
+
 ```toml
 [[variables]]
 name = "variable_name"
@@ -58,20 +74,29 @@ default = "default_value"
 ```
 
 #### Using Variables in Templates
-You can use these variables in your project files by enclosing the variable name in double curly braces. For instance, if you have defined a variable project_name, you can use it in your files like this:
-```
+
+You can use these variables in your project files by enclosing the variable
+name in double curly braces. For instance, if you have defined a variable
+project_name, you can use it in your files like this:
+
+```txt
 {{project_name}}
 ```
 
 ### Filling Variable Values
 
-When you clone a snapshot, the CLI will prompt you to enter values for these variables. If you don't provide a value, the default value specified in `setuprs.toml` will be used.
+When you clone a snapshot, the CLI will prompt you to enter values for these
+variables. If you don't provide a value, the default value specified in
+`setuprs.toml` will be used.
 
 #### Example Workflow
 
-1. Define variables in `setuprs.toml`:
+1. Define the tag of the snapshot (snapshot name) && variables in `setuprs.toml`:
 
     ```toml
+    [project]
+    name = "example_snapshot"
+
     [[variables]]
     name = "project_name"
     default = "my_project"
@@ -89,17 +114,30 @@ When you clone a snapshot, the CLI will prompt you to enter values for these var
     }
     ```
 
-3. Clone a snapshot:
+    // random_file.txt
+
+    ```txt
+    Project: {{project_name}}, Author: {{author}}
+    ```
+
+3. Create the snapshot
+
+    ```sh
+    setuprs snapshot create .
+    ```
+
+4. Clone a snapshot:
 
     ```sh
     setuprs snapshot clone example_snapshot -d ./new_project
     ```
 
-4. The CLI will prompt you:
+5. The CLI will prompt you:
 
-    ```
+    ```bash
     Enter value for project_name [default: my_project]: 
     Enter value for author: 
     ```
 
-This feature ensures that you can easily and quickly customize your project scaffolds during the cloning process.
+This feature ensures that you can easily and quickly customize your project
+scaffolds during the cloning process.
