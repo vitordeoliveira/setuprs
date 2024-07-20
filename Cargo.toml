@@ -1,6 +1,6 @@
 [package]
 name = "setuprs"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "setuprs is a versatile CLI and TUI application designed to streamline project management by enabling quick creation and cloning of project snapshots. Utilizing clap.rs for command-line functionality and ratatui.rs for an interactive text interface, setuprs offers a user-friendly solution for managing and replicating project scaffolds efficiently."
 license = "MIT"
