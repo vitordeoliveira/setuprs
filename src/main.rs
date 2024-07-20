@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
                     let provided_value = match var.default {
                         Some(default_value) => {
                             let question = format!(
-                                "please inform the {} (default: {}): ",
+                                "Enter value for {} [default: {}]: ",
                                 var.name, default_value
                             );
 
@@ -105,7 +105,7 @@ async fn main() -> Result<()> {
                         }
 
                         None => {
-                            let question = format!("please inform the {}: ", var.name);
+                            let question = format!("Enter value for {}: ", var.name);
                             get_input(input, output, &question)
                         }
                     };
