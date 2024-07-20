@@ -78,7 +78,6 @@ When you clone a snapshot, the CLI will prompt you to enter values for these var
 
     [[variables]]
     name = "author"
-    default = "your_name"
     ```
 
 2. Use these variables in your project files:
@@ -99,8 +98,8 @@ When you clone a snapshot, the CLI will prompt you to enter values for these var
 4. The CLI will prompt you:
 
     ```
-    Enter value for project_name [my_project]: 
-    Enter value for author [your_name]: 
+    Enter value for project_name [default: my_project]: 
+    Enter value for author: 
     ```
 
 This feature ensures that you can easily and quickly customize your project scaffolds during the cloning process.
