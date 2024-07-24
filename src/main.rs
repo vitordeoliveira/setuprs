@@ -2,15 +2,18 @@ use clap::Parser;
 use setuprs::{
     cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions},
     core::{
-        utils::{
-            copy_dir_all, get_all_snapshot_ids, get_input,
-            search_file_create_config_folder_if_not_found,
-        },
+        utils::{copy_dir_all, get_input, search_file_create_config_folder_if_not_found},
         Config, SetuprsConfig,
     },
     error::{Error, Result},
+};
+
+#[cfg(feature = "tui")]
+use setuprs::{
+    core::utils::get_all_snapshot_ids,
     tui::app::{App, ObjList},
 };
+
 use std::{
     collections::HashMap,
     env,
@@ -207,12 +210,14 @@ name = \"{project_name}\"\n
                 .expect("Failed to write on setuprs.toml file");
         }
 
+        #[cfg(feature = "tui")]
         Some(Commands::Tui {}) => {
             let items_ids = get_all_snapshot_ids(&config.snapshots_path)?;
             let items = ObjList::from_array(items_ids);
             let mut app = App::new(items, config)?;
             app.run().await?;
         }
+
         None => {}
     };
 

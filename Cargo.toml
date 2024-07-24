@@ -14,10 +14,10 @@ authors = ["Vitor de Oliveira vitordeoliveira50@gmail.com"]
 assert_cmd = "2.0.14"
 clap = { version = "4.5.4", features = ["derive"] }
 # color-eyre = "0.6.3"
+ratatui = { version = "0.27.0", optional = true }
 crossterm = "0.27.0"
 glob = "0.3.1"
 predicates = "3.1.0"
-ratatui = "0.27.0"
 serde = "1.0.197"
 serde_derive = "1.0.197"
 serial_test = "3.1.1"
@@ -26,3 +26,6 @@ tokio = { version = "1.37.0", features = ["full"] }
 tokio-util = "0.7.11"
 toml = "0.8.12"
 uuid = { version = "1.8.0", features = ["v4"] }
+
+[features]
+tui = ["ratatui"]

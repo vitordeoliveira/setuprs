@@ -27,7 +27,7 @@ pub enum Commands {
         dir: Option<String>,
     },
 
-    #[clap(hide = true)]
+    #[cfg(feature = "tui")]
     /// Run terminal-user-interface
     Tui {},
 }
