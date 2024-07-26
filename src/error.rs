@@ -6,9 +6,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Error)]
 pub enum Error {
-    #[error("Unknown Error")]
-    Unknown,
-
     #[error("{0}")]
     TomlError(#[from] toml::de::Error),
 
