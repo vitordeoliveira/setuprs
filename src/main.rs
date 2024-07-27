@@ -1,18 +1,20 @@
-use clap::Parser;
-use setuprs::{
-    cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions},
-    core::{
-        utils::{copy_dir_all, get_input, search_file_create_config_folder_if_not_found},
-        Config, SetuprsConfig,
-    },
-    error::{Error, Result},
-};
-
+mod cli;
+mod core;
+mod error;
 #[cfg(feature = "tui")]
-use setuprs::{
-    core::utils::get_all_snapshot_ids,
-    tui::app::{App, ObjList},
+mod tui;
+
+use clap::Parser;
+use cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions};
+use core::{
+    utils::{
+        copy_dir_all, get_all_snapshot_ids, get_input,
+        search_file_create_config_folder_if_not_found,
+    },
+    Config, SetuprsConfig,
 };
+use error::*;
+use tui::app::{App, ObjList};
 
 use std::{
     collections::HashMap,
