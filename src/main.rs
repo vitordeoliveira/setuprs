@@ -7,13 +7,15 @@ mod tui;
 use clap::Parser;
 use cli::{Cli, Commands, ConfigArgs, ConfigOptions, SnapshotArgs, SnapshotOptions};
 use core::{
-    utils::{
-        copy_dir_all, get_all_snapshot_ids, get_input,
-        search_file_create_config_folder_if_not_found,
-    },
+    utils::{copy_dir_all, get_input, search_file_create_config_folder_if_not_found},
     Config, SetuprsConfig,
 };
 use error::*;
+
+#[cfg(feature = "tui")]
+use core::utils::get_all_snapshot_ids;
+
+#[cfg(feature = "tui")]
 use tui::app::{App, ObjList};
 
 use std::{

@@ -1,6 +1,6 @@
 use glob::Pattern;
 use std::{
-    env, fs,
+    fs,
     io::{BufRead, Write},
     path::Path,
     sync::Mutex,
@@ -65,11 +65,7 @@ where
     s.trim().to_string()
 }
 
-pub fn confirm_selection() {
-    let current_path = env::current_dir();
-    println!("{}", current_path.unwrap().display());
-}
-
+#[cfg(feature = "tui")]
 pub fn get_all_snapshot_ids(src: impl AsRef<Path>) -> Result<Vec<String>> {
     let mut result: Vec<String> = vec![];
     if let Ok(entries) = fs::read_dir(src) {
