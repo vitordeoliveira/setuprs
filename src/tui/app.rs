@@ -42,8 +42,6 @@ impl<T: ?Sized + DefaultActions> Action<T> {
     }
 }
 
-// TODO: setuprs config file, to user pass variables before the app creation
-// TODO: with dyn vars from user every place where %VAR% should replace with the variables
 #[derive(Debug, Default)]
 pub struct App {
     pub current_config: Config,
